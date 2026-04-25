@@ -32,8 +32,20 @@ export const setupInterceptors = (apiClient) => {
             console.error('Lỗi 401 (Unauthorized) - Token hết hạn hoặc không hợp lệ.');
             // TODO: Bổ sung logic xóa token cũ và đẩy về trang /login
             break;
+          case 403:
+            console.error('Lỗi 403 (Forbidden) - Bạn không có quyền truy cập tài nguyên này.');
+            break;
+          case 404:
+            console.error('Lỗi 404 (Not Found) - Tài nguyên yêu cầu không tồn tại.');
+            break;
           case 500:
             console.error('Lỗi 500 (Internal Server Error) - Lỗi từ phía hệ thống máy chủ.');
+            break;
+          case 503:
+            console.error('Lỗi 503 (Service Unavailable) - Máy chủ đang bảo trì hoặc quá tải.');
+            break;
+          case 504:
+            console.error('Lỗi 504 (Gateway Timeout) - Máy chủ không phản hồi kịp thời.');
             break;
           default:
             console.error(`Lỗi ${status}:`, data);
