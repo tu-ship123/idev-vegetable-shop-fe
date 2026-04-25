@@ -6,6 +6,10 @@ import BaseButton from './BaseButton.vue'
 
 
 
+
+
+
+
 const authStore = useAuthStore()
 const router = useRouter()
 const searchQuery = ref('')
