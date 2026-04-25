@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import BaseButton from './BaseButton.vue'
 
+
+
 const authStore = useAuthStore()
 const router = useRouter()
 const searchQuery = ref('')
