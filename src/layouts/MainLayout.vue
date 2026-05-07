@@ -2,6 +2,9 @@
 import Header from '../components/Header.vue'
 import Sidebar from '../components/Sidebar.vue'
 import Footer from '../components/Footer.vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 </script>
 
 <template>
@@ -15,10 +18,12 @@ import Footer from '../components/Footer.vue'
 
       <!-- Main Content - Filling remaining space -->
       <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 transition-all duration-300">
-        <!-- Top Bar inside Main (Optional but adds premium feel) -->
+        <!-- Top Bar inside Main -->
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 class="text-3xl font-black text-gray-900 tracking-tight">Bảng điều khiển</h1>
+            <h1 class="text-3xl font-black text-gray-900 tracking-normal font-outfit">
+              {{ route.meta.pageTitle || 'Bảng điều khiển' }}
+            </h1>
             <div class="flex items-center gap-2 mt-1">
               <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
               <p class="text-gray-500 text-xs font-medium uppercase tracking-wider">Hệ thống đang hoạt động ổn định</p>

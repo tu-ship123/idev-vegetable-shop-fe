@@ -3,12 +3,12 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import BaseButton from './BaseButton.vue'
-
-
-
-
-
-
+import { 
+  Search, 
+  ShoppingCart, 
+  UserCircle, 
+  Leaf 
+} from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -22,7 +22,7 @@ const searchQuery = ref('')
       <div class="flex items-center gap-10">
         <router-link to="/" class="group flex items-center gap-3">
           <div class="bg-green-600 w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl shadow-green-100 group-hover:rotate-[10deg] transition-all duration-500">
-            <span class="text-2xl">🥬</span>
+            <Leaf :size="24" class="text-white" />
           </div>
           <div class="flex flex-col">
             <span class="text-2xl font-black text-gray-900 tracking-tight leading-none">Vegetable Shop</span>
@@ -40,7 +40,7 @@ const searchQuery = ref('')
             placeholder="Tìm kiếm rau củ quả tươi sạch..."
             class="w-full bg-gray-50 border-none rounded-2xl px-12 py-3.5 text-sm focus:bg-white focus:ring-2 focus:ring-green-500/20 outline-none transition-all duration-300"
           />
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🔍</span>
+          <Search :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
       </div>
 
@@ -48,7 +48,7 @@ const searchQuery = ref('')
       <div class="flex items-center gap-4 sm:gap-6">
         <!-- Cart -->
         <button class="flex items-center gap-3 px-4 py-2.5 bg-gray-900 text-white rounded-2xl hover:bg-green-600 transition-all shadow-lg group">
-          <span class="text-xl">🛒</span>
+          <ShoppingCart :size="20" class="group-hover:scale-110 transition-transform" />
           <div class="hidden sm:flex flex-col items-start leading-tight">
             <span class="text-[10px] font-bold text-gray-400 uppercase">Giỏ hàng</span>
             <span class="text-sm font-bold">0đ</span>
@@ -57,15 +57,15 @@ const searchQuery = ref('')
 
         <!-- Profile/Login -->
         <div v-if="authStore.isLoggedIn" class="flex items-center gap-3">
-          <div class="h-11 w-11 rounded-2xl bg-green-100 flex items-center justify-center text-xl cursor-pointer">
-            👤
+          <div class="h-11 w-11 rounded-2xl bg-green-100 flex items-center justify-center text-green-600 cursor-pointer hover:bg-green-200 transition-colors">
+            <UserCircle :size="24" />
           </div>
         </div>
         <BaseButton 
           v-else 
           @click="router.push('/login')"
           variant="primary" 
-          class="!px-6 !rounded-xl"
+          class="!px-8 !py-2.5 !rounded-2xl font-bold shadow-lg shadow-green-100 hover:scale-105 transition-all"
         >
           Đăng nhập
         </BaseButton>
