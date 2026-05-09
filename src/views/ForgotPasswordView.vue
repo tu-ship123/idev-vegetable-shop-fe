@@ -4,37 +4,78 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
-import { ChevronLeft, MailCheck } from 'lucide-vue-next'
+import { Home } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
 
-const email = ref('')
-const error = ref('')
+// Quản lý trạng thái 2 bước
+const step = ref(1) // Bước 1: Nhập email | Bước 2: Nhập OTP & Đổi mật khẩu
 const isLoading = ref(false)
-const isSubmitted = ref(false)
+const error = ref('')
 
-const validateEmail = () => {
+// Biến lưu trữ dữ liệu form
+const email = ref('')
+const otpCode = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+
+// Hàm xử lý Bước 1: Xin mã OTP
+const handleSendOTP = async () => {
   error.value = ''
   if (!email.value) {
-    error.value = 'Vui lòng nhập email'
-    return false
+    error.value = 'Vui lòng nhập email đã đăng ký'
+    return
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    // THÊM ĐOẠN NÀY: Kiểm tra định dạng y như bên trang Đăng nhập
     error.value = 'Email không đúng định dạng'
-    return false
+    return
   }
-  return true
-}
-
-const handleSubmit = async () => {
-  if (!validateEmail()) return
 
   isLoading.value = true
   try {
-    const success = await authStore.forgotPassword(email.value)
-    if (success) {
-      isSubmitted.value = true
-    }
+    // Gửi data dưới dạng Object khớp với ForgotPasswordRequest.java
+    await authStore.forgotPassword({ email: email.value })
+    // Nếu BE trả về 200, chuyển sang bước 2
+    step.value = 2 
+  } catch (err) {
+    console.error(err)
+    // Các lỗi 400, 404 đã được axiosInterceptor tự động báo alert, không cần xử lý thêm ở đây
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Hàm xử lý Bước 2: Đổi mật khẩu
+const handleResetPassword = async () => {
+  error.value = ''
+  
+  // Validate cơ bản phía FE
+  if (!otpCode.value || !newPassword.value || !confirmPassword.value) {
+    error.value = 'Vui lòng nhập đầy đủ thông tin'
+    return
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    error.value = 'Mật khẩu xác nhận không khớp'
+    return
+  }
+  if (newPassword.value.length < 6) {
+    error.value = 'Mật khẩu phải từ 6 ký tự trở lên'
+    return
+  }
+
+  isLoading.value = true
+  try {
+    // Gửi data dưới dạng Object khớp với ResetPasswordRequest.java
+    await authStore.resetPassword({
+      email: email.value,
+      otpCode: otpCode.value,
+      newPassword: newPassword.value
+    })
+    
+    // Nếu thành công
+    alert('Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.')
+    router.push('/login')
   } catch (err) {
     console.error(err)
   } finally {
@@ -44,78 +85,78 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 relative overflow-hidden">
-      <!-- Decoration -->
-      <div class="absolute -top-10 -right-10 w-32 h-32 bg-green-50 rounded-full blur-3xl"></div>
+  <main class="min-h-screen flex items-center justify-center relative bg-[url('https://themewagon.github.io/vegefoods/images/category-1.jpg')] bg-cover bg-center bg-no-repeat bg-fixed font-sans">
+    <div class="absolute inset-0 bg-black/40"></div>
+
+    <div class="relative z-10 w-full max-w-md bg-white p-8 sm:p-10 shadow-2xl rounded-md m-4">
       
-      <!-- Navigation Buttons -->
-      <div class="absolute top-6 left-6 right-6 flex justify-between items-center">
-        <button 
-          @click="router.push('/login')"
-          class="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-gray-900 transition-all group flex items-center gap-2"
-        >
-          <ChevronLeft :size="20" class="group-hover:-translate-x-1 transition-transform" />
-          <span class="text-xs font-bold font-outfit uppercase tracking-wider hidden sm:inline">Quay lại</span>
-        </button>
+      <button @click="router.push('/login')" class="absolute -top-12 left-0 text-white flex items-center gap-2 hover:text-[#82ae46] transition-colors" style="font-family: 'Poppins', sans-serif;">
+        <Home :size="18" /> Quay lại đăng nhập
+      </button>
 
-        <button 
-          @click="router.push('/')"
-          class="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-green-600 transition-all group flex items-center gap-2"
-        >
-          <span class="text-xs font-bold font-outfit uppercase tracking-wider hidden sm:inline">Trang chủ</span>
-          <Home :size="20" />
-        </button>
-      </div>
-
-      <div v-if="!isSubmitted">
-        <div class="text-center mb-10 mt-4">
-          <div class="bg-green-100 w-16 h-16 rounded-2xl flex items-center justify-center text-green-600 mx-auto mb-6">
-            <MailCheck :size="32" />
-          </div>
-          <h2 class="text-3xl font-black text-gray-900 tracking-tight font-outfit">Quên mật khẩu?</h2>
-          <p class="mt-4 text-gray-500 leading-relaxed font-inter text-base max-w-[280px] mx-auto">
-            Nhập email của bạn để nhận hướng dẫn đặt lại mật khẩu mới.
-          </p>
+      <div v-if="step === 1">
+        <div class="text-center mb-8">
+          <h2 class="text-5xl font-bold text-[#82ae46] mb-2" style="font-family: 'Amatic SC', cursive;">Quên Mật Khẩu</h2>
+          <p class="text-gray-500 text-sm" style="font-family: 'Poppins', sans-serif;">Nhập email để nhận mã OTP khôi phục</p>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="space-y-8">
+        <form @submit.prevent="handleSendOTP" class="space-y-6" style="font-family: 'Poppins', sans-serif;">
           <BaseInput
             v-model="email"
             label="Địa chỉ Email"
             type="email"
-            placeholder="example@gmail.com"
+            placeholder="Email bạn đã đăng ký"
             :error="error"
-            class="font-inter"
           />
 
-          <BaseButton
-            type="submit"
-            variant="primary"
-            class="w-full !py-4 !rounded-2xl text-base font-bold shadow-lg shadow-green-100 font-inter uppercase tracking-wider"
-            :disabled="isLoading"
-          >
-            {{ isLoading ? 'Đang gửi...' : 'Gửi yêu cầu' }}
+          <BaseButton type="submit" variant="primary" class="w-full" :disabled="isLoading">
+            {{ isLoading ? 'ĐANG GỬI...' : 'NHẬN MÃ OTP' }}
           </BaseButton>
         </form>
       </div>
 
-      <div v-else class="text-center py-6">
-        <div class="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center text-green-600 mx-auto mb-8 animate-bounce">
-          <MailCheck :size="40" />
+      <div v-else>
+        <div class="text-center mb-6">
+          <h2 class="text-5xl font-bold text-[#82ae46] mb-2" style="font-family: 'Amatic SC', cursive;">Đặt Lại Mật Khẩu</h2>
+          <p class="text-gray-500 text-sm" style="font-family: 'Poppins', sans-serif;">
+            Mã OTP 6 số đã được gửi đến <br><strong class="text-gray-800">{{ email }}</strong>
+          </p>
         </div>
-        <h2 class="text-3xl font-black text-gray-900 tracking-tight">Kiểm tra Email</h2>
-        <p class="mt-4 text-gray-500 leading-relaxed mb-10">
-          Chúng tôi đã gửi link đặt lại mật khẩu đến <span class="font-bold text-gray-900">{{ email }}</span>. Vui lòng kiểm tra hộp thư của bạn.
-        </p>
-        <BaseButton
-          @click="router.push('/login')"
-          variant="outline"
-          class="w-full !py-4 !rounded-2xl font-bold"
-        >
-          Quay lại Đăng nhập
-        </BaseButton>
+
+        <form @submit.prevent="handleResetPassword" class="space-y-4" style="font-family: 'Poppins', sans-serif;">
+          <p v-if="error" class="text-xs text-red-500 text-center italic mb-4">{{ error }}</p>
+
+          <BaseInput
+            v-model="otpCode"
+            label="Mã OTP"
+            type="text"
+            placeholder="Nhập mã 6 chữ số"
+          />
+          
+          <BaseInput
+            v-model="newPassword"
+            label="Mật khẩu mới"
+            type="password"
+            placeholder="Từ 6 ký tự"
+          />
+          
+          <BaseInput
+            v-model="confirmPassword"
+            label="Xác nhận mật khẩu"
+            type="password"
+            placeholder="Nhập lại mật khẩu mới"
+          />
+
+          <BaseButton type="submit" variant="primary" class="w-full mt-6" :disabled="isLoading">
+            {{ isLoading ? 'ĐANG XỬ LÝ...' : 'ĐỔI MẬT KHẨU' }}
+          </BaseButton>
+          
+          <button type="button" @click="step = 1" class="w-full text-center text-[11px] text-gray-500 hover:text-[#82ae46] mt-4 font-bold uppercase tracking-widest transition-colors">
+            Sử dụng Email khác
+          </button>
+        </form>
       </div>
+
     </div>
   </main>
 </template>

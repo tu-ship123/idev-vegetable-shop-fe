@@ -1,53 +1,77 @@
 <script setup>
-import { useCounterStore } from '../stores/counter'
-import { Sprout, Truck, ShieldCheck } from 'lucide-vue-next'
+import { Truck, ShieldCheck, Award, Headphones } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 
-const counter = useCounterStore()
+const router = useRouter()
 </script>
 
 <template>
-  <div class="text-center">
-    <h2 class="text-4xl font-black text-gray-900 sm:text-6xl font-outfit tracking-tight leading-tight">
-      Chào mừng đến với <br>
-      <span class="text-green-600 italic">Cửa hàng Rau quả</span>
-    </h2>
-    <p class="mt-6 text-xl text-gray-500 font-inter max-w-2xl mx-auto leading-relaxed">
-      Nền tảng cung cấp nông sản sạch hiện đại, tích hợp công nghệ quản lý thông minh giúp kết nối nông trại trực tiếp đến bàn ăn.
-    </p>
-    <div class="mt-8 flex justify-center gap-4">
-      <button 
-        @click="counter.increment"
-        class="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition"
-      >
-        Lượt click: {{ counter.count }}
-      </button>
-      <button class="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition">
-        Xem tài liệu
-      </button>
-    </div>
+  <div class="w-full">
+    
+    <section class="relative h-[600px] flex items-center justify-center bg-[url('https://themewagon.github.io/vegefoods/images/bg_1.jpg')] bg-cover bg-center bg-no-repeat bg-fixed">
+      <div class="absolute inset-0 bg-black/20"></div>
+      
+      <div class="relative z-10 text-center text-white px-4 animate-fade-in-up">
+        <h1 class="text-6xl md:text-8xl font-bold mb-4" style="font-family: 'Amatic SC', cursive;">CHÚNG TÔI CUNG CẤP<br>RAU CỦ & TRÁI CÂY TƯƠI</h1>
+        <p class="text-sm md:text-lg mb-8 uppercase tracking-[3px] font-light">Thực phẩm 100% tươi sạch & hữu cơ</p>
+        <button 
+          @click="router.push('/products')" 
+          class="bg-[#82ae46] text-white px-8 py-3 rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#6c9239] transition-colors"
+        >
+          Xem chi tiết
+        </button>
+      </div>
+    </section>
+
+    <section class="py-16 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+          
+          <div class="flex flex-col items-center group">
+            <div class="w-24 h-24 rounded-full bg-[#f3f6f4] flex items-center justify-center text-[#82ae46] mb-6 group-hover:bg-[#82ae46] group-hover:text-white transition-colors duration-300">
+              <Truck :size="40" />
+            </div>
+            <h3 class="text-sm font-medium uppercase tracking-widest mb-4">Giao hàng miễn phí</h3>
+            <p class="text-gray-500 text-sm">Giao hàng tận nơi miễn phí cho mọi đơn hàng trên 500.000đ.</p>
+          </div>
+
+          <div class="flex flex-col items-center group">
+            <div class="w-24 h-24 rounded-full bg-[#eaf4eb] flex items-center justify-center text-[#82ae46] mb-6 group-hover:bg-[#82ae46] group-hover:text-white transition-colors duration-300">
+              <ShieldCheck :size="40" />
+            </div>
+            <h3 class="text-sm font-medium uppercase tracking-widest mb-4">Luôn tươi sạch</h3>
+            <p class="text-gray-500 text-sm">Sản phẩm được thu hoạch và đóng gói cẩn thận mỗi ngày.</p>
+          </div>
+
+          <div class="flex flex-col items-center group">
+            <div class="w-24 h-24 rounded-full bg-[#f6f2eb] flex items-center justify-center text-[#82ae46] mb-6 group-hover:bg-[#82ae46] group-hover:text-white transition-colors duration-300">
+              <Award :size="40" />
+            </div>
+            <h3 class="text-sm font-medium uppercase tracking-widest mb-4">Chất lượng cao</h3>
+            <p class="text-gray-500 text-sm">Đạt tiêu chuẩn VietGAP, không sử dụng thuốc trừ sâu hóa học.</p>
+          </div>
+
+          <div class="flex flex-col items-center group">
+            <div class="w-24 h-24 rounded-full bg-[#f3eaf2] flex items-center justify-center text-[#82ae46] mb-6 group-hover:bg-[#82ae46] group-hover:text-white transition-colors duration-300">
+              <Headphones :size="40" />
+            </div>
+            <h3 class="text-sm font-medium uppercase tracking-widest mb-4">Hỗ trợ 24/7</h3>
+            <p class="text-gray-500 text-sm">Đội ngũ chăm sóc khách hàng luôn sẵn sàng giải đáp thắc mắc.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
   </div>
-  
-  <section class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-    <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-shadow">
-      <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
-        <Sprout :size="24" />
-      </div>
-      <h3 class="text-lg font-bold mb-2">Tươi sạch</h3>
-      <p class="text-gray-600">Sản phẩm luôn được nhập mới mỗi ngày từ nông trại.</p>
-    </div>
-    <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-shadow">
-      <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 mb-4 group-hover:scale-110 transition-transform">
-        <Truck :size="24" />
-      </div>
-      <h3 class="text-lg font-bold mb-2">Giao hàng nhanh</h3>
-      <p class="text-gray-600">Cam kết giao hàng trong vòng 2 giờ tại nội thành.</p>
-    </div>
-    <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-shadow">
-      <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
-        <ShieldCheck :size="24" />
-      </div>
-      <h3 class="text-lg font-bold mb-2">An toàn</h3>
-      <p class="text-gray-600">Quy trình kiểm tra chất lượng đạt chuẩn VietGAP.</p>
-    </div>
-  </section>
 </template>
+
+<style scoped>
+.animate-fade-in-up {
+  animation: fadeInUp 1s ease-out forwards;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>

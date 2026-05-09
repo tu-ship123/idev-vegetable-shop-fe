@@ -1,79 +1,75 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ShoppingCart, User, Search, Menu, LogOut } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
-import BaseButton from './BaseButton.vue'
-import { 
-  Search, 
-  ShoppingCart, 
-  UserCircle, 
-  Leaf 
-} from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
-const searchQuery = ref('')
+
+const handleLogout = () => {
+  // Gọi action logout từ Pinia để xóa token và user info
+  authStore.logout()
+  // Đưa người dùng về trang đăng nhập
+  router.push('/login')
+}
 </script>
 
 <template>
-  <header class="bg-white/90 backdrop-blur-xl shadow-sm sticky top-0 z-[60] border-b border-gray-100 w-full">
-    <div class="px-6 sm:px-8 lg:px-10 flex justify-between items-center h-20">
-      <!-- Logo Section -->
-      <div class="flex items-center gap-10">
-        <router-link to="/" class="group flex items-center gap-3">
-          <div class="bg-green-600 w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl shadow-green-100 group-hover:rotate-[10deg] transition-all duration-500">
-            <Leaf :size="24" class="text-white" />
-          </div>
-          <div class="flex flex-col">
-            <span class="text-2xl font-black text-gray-900 tracking-tight leading-none">Vegetable Shop</span>
-            <span class="text-[10px] text-green-600 font-bold tracking-[3px] uppercase mt-1">Cửa hàng rau sạch</span>
-          </div>
-        </router-link>
-      </div>
+  <header class="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-50">
+    <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
+      <router-link to="/" class="text-[#82ae46] text-4xl font-bold uppercase tracking-tighter" style="font-family: 'Amatic SC', cursive;">
+        Vegefoods
+      </router-link>
 
-      <!-- Search Bar -->
-      <div class="hidden md:flex flex-grow max-w-2xl mx-12">
-        <div class="relative w-full">
-          <input 
-            v-model="searchQuery"
-            type="text"
-            placeholder="Tìm kiếm rau củ quả tươi sạch..."
-            class="w-full bg-gray-50 border-none rounded-2xl px-12 py-3.5 text-sm focus:bg-white focus:ring-2 focus:ring-green-500/20 outline-none transition-all duration-300"
-          />
-          <Search :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+      <nav class="hidden lg:flex items-center gap-8 text-[13px] font-medium uppercase tracking-[2px]">
+        <router-link to="/" class="hover:text-[#82ae46] transition-colors" exact-active-class="text-[#82ae46]">Trang chủ</router-link>
+        <router-link to="/products" class="hover:text-[#82ae46] transition-colors" active-class="text-[#82ae46]">Cửa hàng</router-link>
+        <a href="#" class="hover:text-[#82ae46]">Liên hệ</a>
+      </nav>
+
+      <div class="flex items-center gap-5 text-gray-800">
+        <Search :size="18" class="cursor-pointer hover:text-[#82ae46]" />
+        
+        <div class="flex items-center gap-1 cursor-pointer hover:text-[#82ae46]">
+          <ShoppingCart :size="18" />
+          <span class="text-[11px] font-bold">[0]</span>
         </div>
-      </div>
 
-      <!-- User Actions -->
-      <div class="flex items-center gap-4 sm:gap-6">
-        <!-- Cart -->
-        <button class="flex items-center gap-3 px-4 py-2.5 bg-gray-900 text-white rounded-2xl hover:bg-green-600 transition-all shadow-lg group">
-          <ShoppingCart :size="20" class="group-hover:scale-110 transition-transform" />
-          <div class="hidden sm:flex flex-col items-start leading-tight">
-            <span class="text-[10px] font-bold text-gray-400 uppercase">Giỏ hàng</span>
-            <span class="text-sm font-bold">0đ</span>
+        <div v-if="authStore.isLoggedIn" class="flex items-center gap-4 border-l pl-5 border-gray-100">
+          <div class="flex items-center gap-2 cursor-pointer hover:text-[#82ae46]">
+            <User :size="18" />
+            <span class="text-[11px] font-bold uppercase hidden sm:inline">
+              {{ authStore.user?.fullName || 'Tài khoản' }}
+            </span>
           </div>
-        </button>
-
-        <!-- Profile/Login -->
-        <div v-if="authStore.isLoggedIn" class="flex items-center gap-3">
-          <div class="h-11 w-11 rounded-2xl bg-green-100 flex items-center justify-center text-green-600 cursor-pointer hover:bg-green-200 transition-colors">
-            <UserCircle :size="24" />
-          </div>
+          
+          <button 
+            @click="handleLogout" 
+            class="flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-red-600 transition-colors"
+            title="Đăng xuất"
+          >
+            <LogOut :size="16" />
+            <span class="hidden sm:inline">Thoát</span>
+          </button>
         </div>
-        <BaseButton 
+
+        <button 
           v-else 
-          @click="router.push('/login')"
-          variant="primary" 
-          class="!px-8 !py-2.5 !rounded-2xl font-bold shadow-lg shadow-green-100 hover:scale-105 transition-all"
+          @click="router.push('/login')" 
+          class="text-[11px] font-bold uppercase tracking-widest hover:text-[#82ae46] border-l pl-5 border-gray-100"
         >
           Đăng nhập
-        </BaseButton>
+        </button>
+
+        <Menu :size="20" class="lg:hidden cursor-pointer" />
       </div>
     </div>
   </header>
 </template>
 
 <style scoped>
-header { transition: all 0.3s ease; }
+/* Đảm bảo font chữ đồng bộ với template Vegefoods */
+header {
+  font-family: 'Poppins', sans-serif;
+}
 </style>

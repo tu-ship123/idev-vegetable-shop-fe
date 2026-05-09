@@ -10,14 +10,19 @@ export const useAuthStore = defineStore('auth', {
     async login(credentials) {
       try {
         const response = await authApi.login(credentials);
-        // Giả sử API trả về { token: '...', user: {...} }
-        const { token, user } = response;
+        
+        // Cập nhật lại cách hứng dữ liệu cho khớp với AuthResponse.java
+        const { token, email, fullName, role } = response;
         
         if (token) {
+          // Gom thông tin lại thành 1 object user để dễ quản lý ở FE
+          const userInfo = { email, fullName, role };
+          
           localStorage.setItem('access_token', token);
-          localStorage.setItem('user_info', JSON.stringify(user || {}));
+          localStorage.setItem('user_info', JSON.stringify(userInfo));
+          
           this.isLoggedIn = true;
-          this.user = user || {};
+          this.user = userInfo;
           return true;
         }
       } catch (error) {
@@ -32,14 +37,31 @@ export const useAuthStore = defineStore('auth', {
         throw error;
       }
     },
-    async forgotPassword(email) {
+
+    // ==========================================
+    // PHẦN THÊM MỚI: LUỒNG QUÊN MẬT KHẨU 2 BƯỚC
+    // ==========================================
+    async forgotPassword(payload) {
       try {
-        await authApi.forgotPassword(email);
+        // payload là object { email: '...' }
+        await authApi.forgotPassword(payload);
         return true;
       } catch (error) {
         throw error;
       }
     },
+    
+    async resetPassword(payload) {
+      try {
+        // payload là object { email, otpCode, newPassword }
+        await authApi.resetPassword(payload);
+        return true;
+      } catch (error) {
+        throw error;
+      }
+    },
+    // ==========================================
+
     logout() {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user_info');
