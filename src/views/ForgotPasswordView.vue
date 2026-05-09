@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import { Home } from 'lucide-vue-next'
+import bgForgot from '@/assets/images/category-1.jpg'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -85,7 +86,8 @@ const handleResetPassword = async () => {
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center relative bg-[url('https://themewagon.github.io/vegefoods/images/category-1.jpg')] bg-cover bg-center bg-no-repeat bg-fixed font-sans">
+  <main 
+    class="min-h-screen flex items-center justify-center relative bg-cover bg-center bg-no-repeat bg-fixed font-sans" :style="{ backgroundImage: `url(${bgForgot})` }" >
     <div class="absolute inset-0 bg-black/40"></div>
 
     <div class="relative z-10 w-full max-w-md bg-white p-8 sm:p-10 shadow-2xl rounded-md m-4">

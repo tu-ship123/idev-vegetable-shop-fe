@@ -1,6 +1,7 @@
 <script setup>
 import { Truck, ShieldCheck, Award, Headphones } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import bgLogin from '@/assets/images/bg_1.jpg'
 
 const router = useRouter()
 </script>
@@ -8,7 +9,7 @@ const router = useRouter()
 <template>
   <div class="w-full">
     
-    <section class="relative h-[600px] flex items-center justify-center bg-[url('https://themewagon.github.io/vegefoods/images/bg_1.jpg')] bg-cover bg-center bg-no-repeat bg-fixed">
+    <section class="min-h-screen flex items-center justify-center relative bg-cover bg-center bg-no-repeat bg-fixed" :style="{ backgroundImage: `url(${bgLogin})` }">
       <div class="absolute inset-0 bg-black/20"></div>
       
       <div class="relative z-10 text-center text-white px-4 animate-fade-in-up">

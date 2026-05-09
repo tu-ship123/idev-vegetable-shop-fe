@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import { Home } from 'lucide-vue-next'
+import bgRegister from '@/assets/images/bg_2.jpg'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -63,7 +64,8 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center relative bg-[url('https://themewagon.github.io/vegefoods/images/bg_2.jpg')] bg-cover bg-center bg-no-repeat bg-fixed">
+  <main 
+    class="min-h-screen flex items-center justify-center relative bg-cover bg-center bg-no-repeat bg-fixed" :style="{ backgroundImage: `url(${bgRegister})` }" >
     <div class="absolute inset-0 bg-black/40"></div>
 
     <div class="relative z-10 w-full max-w-lg bg-white p-8 sm:p-12 shadow-2xl rounded-sm m-4 animate-fade-in">

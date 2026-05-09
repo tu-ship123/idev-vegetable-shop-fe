@@ -1,9 +1,11 @@
 <script setup>
 import { Home } from 'lucide-vue-next'
+import bgError from '@/assets/images/bg_3.jpg'
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center relative bg-[url('https://themewagon.github.io/vegefoods/images/bg_3.jpg')] bg-cover bg-center bg-no-repeat bg-fixed">
+  <main 
+    class="min-h-screen flex items-center justify-center relative bg-cover bg-center bg-no-repeat bg-fixed" :style="{ backgroundImage: `url(${bgError})` }" >
     <div class="absolute inset-0 bg-black/50"></div>
     
     <div class="relative z-10 text-center text-white px-4 animate-fade-in">
