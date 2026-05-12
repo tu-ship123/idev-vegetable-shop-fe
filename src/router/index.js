@@ -20,8 +20,14 @@ const routes = [
       {
         path: 'products',
         name: 'products',
-        component: () => import('@/views/HomeView.vue'),
+        component: () => import('@/views/ProductsView.vue'),
         meta: { title: 'Sản phẩm | Cửa hàng Rau sạch', pageTitle: 'Sản phẩm' }
+      },
+      {
+        path: 'products/:id',
+        name: 'product-detail',
+        component: () => import('@/views/ProductDetailView.vue'),
+        meta: { title: 'Chi tiết sản phẩm | Cửa hàng Rau sạch', pageTitle: 'Chi tiết sản phẩm' }
       }
     ]
   },
