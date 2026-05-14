@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Search, Filter, X } from 'lucide-vue-next'
+import { formatPrice } from '@/utils/formatters'
 
 const props = defineProps({
   categories: {
@@ -21,13 +22,6 @@ const applyFilters = () => {
     maxPrice: priceRange.value,
     q: searchQuery.value
   })
-}
-
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
 }
 </script>
 

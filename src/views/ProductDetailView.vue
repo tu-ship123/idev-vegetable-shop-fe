@@ -14,6 +14,7 @@ import {
 } from 'lucide-vue-next'
 import { productApi } from '@/api/productApi'
 import ProductCard from '@/components/ProductCard.vue'
+import { formatPrice } from '@/utils/formatters'
 
 // Mock Image
 import p1 from '@/assets/images/product-1.jpg'
@@ -65,13 +66,6 @@ const fetchProductDetail = async () => {
   } finally {
     isLoading.value = false
   }
-}
-
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
 }
 
 onMounted(() => {

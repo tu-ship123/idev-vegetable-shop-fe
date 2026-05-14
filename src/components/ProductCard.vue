@@ -1,6 +1,7 @@
 <script setup>
 import { ShoppingCart, Eye, Heart } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import { formatPrice } from '@/utils/formatters'
 
 const props = defineProps({
   product: {
@@ -10,13 +11,6 @@ const props = defineProps({
 })
 
 const router = useRouter()
-
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
-}
 
 const navigateToDetail = () => {
   router.push(`/products/${props.product.id}`)
