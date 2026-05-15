@@ -2,25 +2,11 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
-  Star, 
-  Minus, 
-  Plus, 
-  ShoppingCart, 
-  Heart, 
-  Share2, 
-  ShieldCheck, 
-  Truck, 
-  RefreshCcw 
+  Star, Minus, Plus, ShoppingCart, Heart, Share2, ShieldCheck, Truck, RefreshCcw 
 } from 'lucide-vue-next'
 import { productApi } from '@/api/productApi'
 import ProductCard from '@/components/ProductCard.vue'
 import { formatPrice } from '@/utils/formatters'
-
-// Mock Image
-import p1 from '@/assets/images/product-1.jpg'
-import p2 from '@/assets/images/product-2.jpg'
-import p3 from '@/assets/images/product-3.jpg'
-import p4 from '@/assets/images/product-4.jpg'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,40 +15,31 @@ const isLoading = ref(true)
 const activeTab = ref('description')
 const quantity = ref(1)
 
-const mockProduct = {
-  id: 1,
-  name: 'Ớt Chuông Đà Lạt',
-  category: 'Rau củ',
-  price: 45000,
-  oldPrice: 55000,
-  discount: 18,
-  image: p1,
-  rating: 4.8,
-  reviews: 124,
-  sku: 'VEG-001-DL',
-  tags: ['Tươi sạch', 'Đà Lạt', 'Hữu cơ'],
-  shortDesc: 'Ớt chuông Đà Lạt được trồng theo tiêu chuẩn VietGAP, quả to, dày thịt, giòn và ngọt thanh. Sản phẩm được thu hoạch và vận chuyển trong ngày.',
-  description: 'Ớt chuông hay còn gọi là ớt ngọt, là loại quả có màu sắc bắt mắt và giá trị dinh dưỡng cao. Ớt chuông Đà Lạt của chúng tôi được trồng trong nhà màng công nghệ cao, kiểm soát chặt chẽ quy trình bón phân và tưới nước.\n\nSản phẩm không chứa dư lượng thuốc bảo vệ thực vật, đạt chứng nhận hữu cơ quốc tế. Thích hợp cho các món xào, salad hoặc nước ép detox.',
-  specs: [
-    { label: 'Trọng lượng', value: '500g / túi' },
-    { label: 'Nguồn gốc', value: 'Lâm Đồng, Việt Nam' },
-    { label: 'Hạn sử dụng', value: '5-7 ngày trong ngăn mát tủ lạnh' },
-    { label: 'Chứng nhận', value: 'VietGAP, GlobalGAP' }
-  ],
-  related: [
-    { id: 2, name: 'Dâu Tây Mộc Châu', category: 'Trái cây', price: 120000, oldPrice: 150000, discount: 20, image: p2 },
-    { id: 3, name: 'Đậu Hà Lan', category: 'Rau củ', price: 35000, image: p3 },
-    { id: 4, name: 'Bắp Cải Tím', category: 'Rau củ', price: 28000, oldPrice: 32000, discount: 12, image: p4 }
-  ]
-}
-
 const fetchProductDetail = async () => {
   isLoading.value = true
   try {
     const res = await productApi.getProductById(route.params.id)
-    product.value = res.data
+    const p = res.data || res // Dò tìm tầng chứa data
+    
+    if (!p) throw new Error("Không nhận được dữ liệu sản phẩm")
+
+    product.value = {
+      ...p,
+      image: p.imageUrl,
+      category: p.categoryName,
+      rating: 5,
+      reviews: 0,
+      shortDesc: p.description, 
+      specs: [
+        { label: 'Đơn vị', value: p.unit || 'N/A' }, // Chống null
+        { label: 'Trạng thái', value: p.stockQty > 0 ? 'Còn hàng' : 'Hết hàng' },
+        { label: 'Ngày nhập', value: p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN') : 'Mới' } // Chống null ngày tháng
+      ],
+      related: [] 
+    }
   } catch (error) {
-    product.value = mockProduct
+    console.error(error)
+    router.push('/products')
   } finally {
     isLoading.value = false
   }

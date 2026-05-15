@@ -6,7 +6,8 @@ import { formatPrice } from '@/utils/formatters'
 const props = defineProps({
   categories: {
     type: Array,
-    required: true
+    required: true,
+    default: () => [] // PHÒNG THỦ: Trả về mảng rỗng nếu không có data
   }
 })
 
@@ -47,7 +48,7 @@ const applyFilters = () => {
       <p class="text-[10px] font-black text-gray-400 uppercase tracking-[3px] mb-6 font-outfit">Danh mục</p>
       <div class="space-y-2">
         <button 
-          v-for="cat in [{id: 'all', name: 'Tất cả'}, ...categories]" 
+          v-for="cat in [{id: 'all', name: 'Tất cả'}, ...(categories || [])]" 
           :key="cat.id"
           @click="selectedCategory = cat.id; applyFilters()"
           class="w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all group"

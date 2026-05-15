@@ -16,10 +16,6 @@ import { productApi } from '@/api/productApi'
 import bg1 from '@/assets/images/bg_1.jpg'
 import bg2 from '@/assets/images/bg_2.jpg'
 import bg3 from '@/assets/images/bg_3.jpg'
-import p1 from '@/assets/images/product-1.jpg'
-import p2 from '@/assets/images/product-2.jpg'
-import p3 from '@/assets/images/product-3.jpg'
-import p4 from '@/assets/images/product-4.jpg'
 
 const router = useRouter()
 const featuredProducts = ref([])
@@ -46,21 +42,23 @@ const slides = [
   }
 ]
 
-// Mock data if API fails
-const mockProducts = [
-  { id: 1, name: 'Ớt Chuông Đà Lạt', category: 'Rau củ', price: 45000, oldPrice: 55000, discount: 18, image: p1 },
-  { id: 2, name: 'Dâu Tây Mộc Châu', category: 'Trái cây', price: 120000, oldPrice: 150000, discount: 20, image: p2 },
-  { id: 3, name: 'Đậu Hà Lan', category: 'Rau củ', price: 35000, image: p3 },
-  { id: 4, name: 'Bắp Cải Tím', category: 'Rau củ', price: 28000, oldPrice: 32000, discount: 12, image: p4 }
-]
-
 onMounted(async () => {
   try {
     const res = await productApi.getFeaturedProducts()
-    featuredProducts.value = res.data
+    
+    // Bọc lót lấy mảng sản phẩm nổi bật
+    const resData = res.data || res
+    const beProducts = Array.isArray(resData) ? resData : (resData.content || [])
+    
+    featuredProducts.value = beProducts.map(p => ({
+      ...p,
+      image: p.imageUrl,
+      category: p.categoryName,
+      rating: 5,
+      reviews: 0
+    }))
   } catch (error) {
-    console.warn('API Featured Products failed, using mock data')
-    featuredProducts.value = mockProducts
+    console.error('Failed to load featured products:', error)
   } finally {
     isLoading.value = false
   }

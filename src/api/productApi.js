@@ -16,7 +16,7 @@ export const productApi = {
     return axiosInstance.get(`/products/${id}`)
   },
 
-  // Lấy sản phẩm nổi bật cho trang chủ
+  // Lấy sản phẩm nổi bật cho trang chủ (lấy 4 SP mới nhất)
   getFeaturedProducts() {
     return axiosInstance.get('/products/featured')
   }

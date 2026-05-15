@@ -6,60 +6,58 @@ import ProductFilter from '@/components/ProductFilter.vue'
 import Pagination from '@/components/Pagination.vue'
 import { productApi } from '@/api/productApi'
 
-// Mock Data
-import p1 from '@/assets/images/product-1.jpg'
-import p2 from '@/assets/images/product-2.jpg'
-import p3 from '@/assets/images/product-3.jpg'
-import p4 from '@/assets/images/product-4.jpg'
-import p5 from '@/assets/images/product-5.jpg'
-import p6 from '@/assets/images/product-6.jpg'
-import p7 from '@/assets/images/product-7.jpg'
-import p8 from '@/assets/images/product-8.jpg'
-
 const products = ref([])
-const categories = ref([
-  { id: 1, name: 'Rau củ' },
-  { id: 2, name: 'Trái cây' },
-  { id: 3, name: 'Hạt & Đồ khô' },
-  { id: 4, name: 'Nước ép' }
-])
+const categories = ref([])
 const isLoading = ref(true)
 const currentPage = ref(1)
-const totalPages = ref(5)
+const totalPages = ref(1)
 
-const mockProducts = [
-  { id: 1, name: 'Ớt Chuông Đà Lạt', category: 'Rau củ', price: 45000, oldPrice: 55000, discount: 18, image: p1 },
-  { id: 2, name: 'Dâu Tây Mộc Châu', category: 'Trái cây', price: 120000, oldPrice: 150000, discount: 20, image: p2 },
-  { id: 3, name: 'Đậu Hà Lan', category: 'Rau củ', price: 35000, image: p3 },
-  { id: 4, name: 'Bắp Cải Tím', category: 'Rau củ', price: 28000, oldPrice: 32000, discount: 12, image: p4 },
-  { id: 5, name: 'Cà Chua Bi', category: 'Rau củ', price: 25000, image: p5 },
-  { id: 6, name: 'Bông Cải Xanh', category: 'Rau củ', price: 38000, image: p6 },
-  { id: 7, name: 'Tỏi Lý Sơn', category: 'Gia vị', price: 150000, image: p7 },
-  { id: 8, name: 'Táo Envy', category: 'Trái cây', price: 180000, oldPrice: 210000, discount: 15, image: p8 }
-]
+const currentFilters = ref({
+  category: 'all',
+  maxPrice: 1000000,
+  q: ''
+})
 
 const fetchProducts = async () => {
   isLoading.value = true
   try {
-    // Fetch products
-    const res = await productApi.getProducts({ page: currentPage.value })
-    products.value = res.data.items
-    totalPages.value = res.data.totalPages
+    const params = {
+      page: currentPage.value - 1,
+      size: 6,
+      categoryId: currentFilters.value.category !== 'all' ? currentFilters.value.category : undefined,
+      maxPrice: currentFilters.value.maxPrice,
+      name: currentFilters.value.q || undefined,
+      sort: 'desc'
+    }
 
-    // Fetch categories (VSI-49)
+    // 1. Gọi và bọc lót dữ liệu Sản phẩm
+    const res = await productApi.getProducts(params)
+    const resData = res.data || res // Dò tìm tầng chứa data
+    const beProducts = resData.content || resData || [] // Lấy mảng an toàn
+    totalPages.value = resData.totalPages || 1
+
+    products.value = beProducts.map(p => ({
+      ...p,
+      image: p.imageUrl,
+      category: p.categoryName,
+      rating: 5,
+      reviews: 0
+    }))
+
+    // 2. Gọi và bọc lót dữ liệu Danh mục
     const catRes = await productApi.getCategories()
-    categories.value = catRes.data
+    const catData = catRes.data || catRes
+    categories.value = Array.isArray(catData) ? catData : [] // Ép kiểu Array tuyệt đối
+
   } catch (error) {
-    products.value = mockProducts
-    totalPages.value = 3
-    console.warn('API fetch failed, using mock data')
+    console.error('API fetch failed:', error)
   } finally {
     isLoading.value = false
   }
 }
 
 const handleFilter = (filters) => {
-  console.log('Applying filters:', filters)
+  currentFilters.value = filters
   currentPage.value = 1
   fetchProducts()
 }

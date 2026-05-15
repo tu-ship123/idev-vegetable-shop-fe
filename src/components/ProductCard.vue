@@ -6,14 +6,17 @@ import { formatPrice } from '@/utils/formatters'
 const props = defineProps({
   product: {
     type: Object,
-    required: true
+    required: true,
+    default: () => ({}) // PHÒNG THỦ: Object rỗng
   }
 })
 
 const router = useRouter()
 
 const navigateToDetail = () => {
-  router.push(`/products/${props.product.id}`)
+  if (props.product && props.product.id) {
+    router.push(`/products/${props.product.id}`)
+  }
 }
 </script>
 
