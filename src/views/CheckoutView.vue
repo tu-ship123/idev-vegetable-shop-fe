@@ -38,31 +38,31 @@ const handleCheckout = async () => {
   errorMsg.value = ''
 
   try {
-    // 1. Luôn phải gọi API Đặt hàng trước để lấy Order ID
-    const orderRes = await orderApi.checkout({
+    const orderPayload = {
       shippingAddress: orderForm.value.shippingAddress,
       paymentMethod: orderForm.value.paymentMethod,
       note: orderForm.value.note
-    })
+    }
+
+    const orderRes = await orderApi.checkout(orderPayload)
     
-    // Tìm orderId từ cục data BE trả về (Bọc lót phòng thủ)
+    // Tìm orderId từ cục data BE trả về
     const orderData = orderRes.data || orderRes
     const orderId = orderData.id
 
     // 2. Kiểm tra phương thức thanh toán
     if (orderForm.value.paymentMethod === 'VNPAY') {
-      // Gọi API tạo link VNPay
       const vnpayRes = await paymentApi.createVnPayUrl(orderId)
       const vnpayData = vnpayRes.data || vnpayRes
       
       if (vnpayData && vnpayData.paymentUrl) {
-        cartStore.clearCart() // Xóa giỏ hàng trước khi bay sang app ngân hàng
-        window.location.href = vnpayData.paymentUrl // Chuyển hướng trình duyệt
-        return // Dừng logic tại đây, không chạy xuống code bên dưới nữa
+        cartStore.clearCart() 
+        window.location.href = vnpayData.paymentUrl 
+        return 
       }
     }
 
-    // 3. Nếu là COD (Thanh toán khi nhận hàng) hoặc VNPay bị lỗi không có link
+    // 3. Nếu là COD
     isSuccess.value = true
     cartStore.clearCart()
     
@@ -188,7 +188,7 @@ const handleCheckout = async () => {
         Cảm ơn bạn đã mua sắm tại Vegetable Shop. Chúng tôi sẽ sớm liên hệ để giao hàng cho bạn.
       </p>
       <button 
-        @click="backToHome"
+        @click="router.push('/')"
         class="bg-gray-900 text-white px-10 py-5 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-colors shadow-xl"
       >
         Quay lại Trang chủ

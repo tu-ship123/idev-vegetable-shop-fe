@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', {
         }
       } catch (error) {
         console.error("Lỗi đăng nhập:", error);
-        throw error; // Vẫn ném lên view để View hiển thị thông báo nếu cần
+        throw error; 
       }
     },
 
@@ -57,11 +57,20 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    logout() {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_info');
-      this.isLoggedIn = false;
-      this.user = null;
+    // ĐÃ SỬA: Gọi API logout trước khi xóa LocalStorage
+    async logout() {
+      try {
+        if (this.isLoggedIn) {
+          await authApi.logout();
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API đăng xuất:", error);
+      } finally {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user_info');
+        this.isLoggedIn = false;
+        this.user = null;
+      }
     }
   }
 })

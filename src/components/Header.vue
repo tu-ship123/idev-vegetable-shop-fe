@@ -1,19 +1,26 @@
 <script setup>
 import { ShoppingCart, User, Search, Menu, LogOut } from 'lucide-vue-next'
-import { useAuthStore } from '../stores/auth'
-import { useCartStore } from '../stores/cart' // <-- CHỖ 1: IMPORT GIỎ HÀNG
+// Đã sửa lại đường dẫn import dùng alias '@' cho đồng bộ và chuẩn xác
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import { useRouter } from 'vue-router'
+import { onMounted } from 'vue' // <-- THÊM VUE HOOK
 
 const authStore = useAuthStore()
-const cartStore = useCartStore() // <-- CHỖ 2: KHỞI TẠO CART STORE
+const cartStore = useCartStore()
 const router = useRouter()
 
 const handleLogout = () => {
-  // Gọi action logout từ Pinia để xóa token và user info
   authStore.logout()
-  // Đưa người dùng về trang đăng nhập
   router.push('/login')
 }
+
+// ĐÃ THÊM: Tự động kéo giỏ hàng chuẩn từ DB về mỗi khi load trang
+onMounted(() => {
+  if (authStore.isLoggedIn) {
+    cartStore.fetchDbCart()
+  }
+})
 </script>
 
 <template>
