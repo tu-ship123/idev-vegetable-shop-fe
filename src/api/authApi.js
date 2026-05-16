@@ -2,7 +2,7 @@
 // Ví dụ: import apiClient từ file 'axiosClient.js' chứa hàm setupInterceptors
 import apiClient from './apiClient'; 
 
-const API_URL = '/v1/auth';
+const API_URL = '/auth';
 
 export const authApi = {
   /**

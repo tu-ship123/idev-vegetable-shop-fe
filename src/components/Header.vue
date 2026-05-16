@@ -1,9 +1,11 @@
 <script setup>
 import { ShoppingCart, User, Search, Menu, LogOut } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
+import { useCartStore } from '../stores/cart' // <-- CHỖ 1: IMPORT GIỎ HÀNG
 import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const cartStore = useCartStore() // <-- CHỖ 2: KHỞI TẠO CART STORE
 const router = useRouter()
 
 const handleLogout = () => {
@@ -30,10 +32,10 @@ const handleLogout = () => {
       <div class="flex items-center gap-5 text-gray-800">
         <Search :size="18" class="cursor-pointer hover:text-[#82ae46]" />
         
-        <div class="flex items-center gap-1 cursor-pointer hover:text-[#82ae46]">
+        <router-link to="/cart" class="flex items-center gap-1 cursor-pointer hover:text-[#82ae46]">
           <ShoppingCart :size="18" />
-          <span class="text-[11px] font-bold">[0]</span>
-        </div>
+          <span class="text-[11px] font-bold">[{{ cartStore.totalItems }}]</span>
+        </router-link>
 
         <div v-if="authStore.isLoggedIn" class="flex items-center gap-4 border-l pl-5 border-gray-100">
           <div class="flex items-center gap-2 cursor-pointer hover:text-[#82ae46]">

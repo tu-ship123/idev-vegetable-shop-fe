@@ -10,14 +10,10 @@ export const useAuthStore = defineStore('auth', {
     async login(credentials) {
       try {
         const response = await authApi.login(credentials);
-        
-        // Cập nhật lại cách hứng dữ liệu cho khớp với AuthResponse.java
         const { token, email, fullName, role } = response;
         
         if (token) {
-          // Gom thông tin lại thành 1 object user để dễ quản lý ở FE
           const userInfo = { email, fullName, role };
-          
           localStorage.setItem('access_token', token);
           localStorage.setItem('user_info', JSON.stringify(userInfo));
           
@@ -26,41 +22,40 @@ export const useAuthStore = defineStore('auth', {
           return true;
         }
       } catch (error) {
-        throw error;
+        console.error("Lỗi đăng nhập:", error);
+        throw error; // Vẫn ném lên view để View hiển thị thông báo nếu cần
       }
     },
+
     async register(userData) {
       try {
         await authApi.register(userData);
         return true;
       } catch (error) {
+        console.error("Lỗi đăng ký:", error);
         throw error;
       }
     },
 
-    // ==========================================
-    // PHẦN THÊM MỚI: LUỒNG QUÊN MẬT KHẨU 2 BƯỚC
-    // ==========================================
     async forgotPassword(payload) {
       try {
-        // payload là object { email: '...' }
         await authApi.forgotPassword(payload);
         return true;
       } catch (error) {
+        console.error("Lỗi gửi yêu cầu quên mật khẩu:", error);
         throw error;
       }
     },
     
     async resetPassword(payload) {
       try {
-        // payload là object { email, otpCode, newPassword }
         await authApi.resetPassword(payload);
         return true;
       } catch (error) {
+        console.error("Lỗi đặt lại mật khẩu:", error);
         throw error;
       }
     },
-    // ==========================================
 
     logout() {
       localStorage.removeItem('access_token');

@@ -1,11 +1,19 @@
+import { useAuthStore } from '@/stores/auth'
+
 export const setupInterceptors = (apiClient) => {
   // 1. Chặn bắt luồng Request: Tự động đính kèm Token bảo mật
   apiClient.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('access_token');
-      if (token) {
+      
+      // FIX 1: Chặn đứng chuỗi 'null', 'undefined' và LOẠI TRỪ các API Đăng ký/Đăng nhập (/auth/)
+      if (token && token !== 'null' && token !== 'undefined' && !config.url.includes('/auth/')) {
         config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        // Đảm bảo xóa sạch header để API public đi qua mượt mà
+        delete config.headers.Authorization;
       }
+      
       return config; 
     },
     (error) => {
@@ -32,8 +40,10 @@ export const setupInterceptors = (apiClient) => {
           case 401:
             console.error('Lỗi 401 (Unauthorized) - Token hết hạn hoặc sai mật khẩu.');
             alert('Phiên đăng nhập hết hạn hoặc sai thông tin. Vui lòng đăng nhập lại.');
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user_info');
+
+            const authStore = useAuthStore();
+            authStore.logout(); 
+            
             window.location.href = '/login';
             break;
           case 403:

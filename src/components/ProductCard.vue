@@ -6,8 +6,7 @@ import { formatPrice } from '@/utils/formatters'
 const props = defineProps({
   product: {
     type: Object,
-    required: true,
-    default: () => ({}) // PHÒNG THỦ: Object rỗng
+    required: true
   }
 })
 

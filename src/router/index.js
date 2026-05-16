@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth' // Import Pinia Auth Store
 
 const routes = [
   {
@@ -14,8 +15,20 @@ const routes = [
       {
         path: 'cart',
         name: 'cart',
-        component: () => import('@/views/HomeView.vue'),
-        meta: { title: 'Giỏ hàng | Cửa hàng Rau sạch', requiresAuth: true, pageTitle: 'Giỏ hàng' }
+        component: () => import('@/views/CartView.vue'),
+        meta: { title: 'Giỏ hàng | Cửa hàng Rau sạch', pageTitle: 'Giỏ hàng' }
+      },
+      {
+        path: 'checkout',
+        name: 'checkout',
+        component: () => import('@/views/CheckoutView.vue'),
+        meta: { title: 'Thanh toán | Cửa hàng Rau sạch', requiresAuth: true, pageTitle: 'Thanh toán' } 
+      },
+      {
+        path: 'payment-result',
+        name: 'payment-result',
+        component: () => import('@/views/PaymentResultView.vue'),
+        meta: { title: 'Kết quả thanh toán | Cửa hàng Rau sạch' }
       },
       {
         path: 'products',
@@ -38,12 +51,6 @@ const routes = [
     meta: { title: 'Đăng nhập | Cửa hàng Rau sạch' }
   },
   {
-    path: '/register',
-    name: 'register',
-    component: () => import('@/views/RegisterView.vue'),
-    meta: { title: 'Đăng ký | Cửa hàng Rau sạch' }
-  },
-  {
     path: '/forgot-password',
     name: 'forgot-password',
     component: () => import('@/views/ForgotPasswordView.vue'),
@@ -62,17 +69,16 @@ const router = createRouter({
   routes
 })
 
-// Navigation Guards bảo vệ điều hướng
 router.beforeEach((to, from, next) => {
-  // Đổi title tab trình duyệt
   document.title = to.meta.title || 'Vegetable Shop'
   
-  // Kiểm tra quyền truy cập
-  const isAuthenticated = !!localStorage.getItem('access_token')
+  // SỬ DỤNG PINIA ĐỂ ĐỒNG BỘ TRẠNG THÁI ĐĂNG NHẬP
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isLoggedIn
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
-  } else if ((to.name === 'login' || to.name === 'register') && isAuthenticated) {
+  } else if ((to.name === 'login') && isAuthenticated) {
     next({ name: 'home' })
   } else {
     next()

@@ -6,16 +6,17 @@ import { formatPrice } from '@/utils/formatters'
 const props = defineProps({
   categories: {
     type: Array,
-    required: true,
-    default: () => [] // PHÒNG THỦ: Trả về mảng rỗng nếu không có data
+    required: true
+    // ĐÃ XÓA: default rỗng
   }
 })
 
-const emit = defineEmits(['filter', 'search'])
+// ĐÃ SỬA: Bỏ 'search' do không sử dụng
+const emit = defineEmits(['filter'])
 
 const searchQuery = ref('')
 const selectedCategory = ref('all')
-const priceRange = ref(500000)
+const priceRange = ref(1000000) // Khởi tạo với giá trị max
 
 const applyFilters = () => {
   emit('filter', {
@@ -28,7 +29,6 @@ const applyFilters = () => {
 
 <template>
   <div class="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm sticky top-24">
-    <!-- Search -->
     <div class="mb-10">
       <p class="text-[10px] font-black text-gray-400 uppercase tracking-[3px] mb-6 font-outfit">Tìm kiếm</p>
       <div class="relative">
@@ -43,7 +43,6 @@ const applyFilters = () => {
       </div>
     </div>
 
-    <!-- Categories -->
     <div class="mb-10">
       <p class="text-[10px] font-black text-gray-400 uppercase tracking-[3px] mb-6 font-outfit">Danh mục</p>
       <div class="space-y-2">
@@ -63,7 +62,6 @@ const applyFilters = () => {
       </div>
     </div>
 
-    <!-- Price Range -->
     <div>
       <div class="flex items-center justify-between mb-6">
         <p class="text-[10px] font-black text-gray-400 uppercase tracking-[3px] font-outfit">Khoảng giá</p>
@@ -84,9 +82,8 @@ const applyFilters = () => {
       </div>
     </div>
 
-    <!-- Reset -->
     <button 
-      @click="searchQuery = ''; selectedCategory = 'all'; priceRange = 500000; applyFilters()"
+      @click="searchQuery = ''; selectedCategory = 'all'; priceRange = 1000000; applyFilters()"
       class="w-full mt-10 py-4 flex items-center justify-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-red-500 transition-all border border-dashed border-gray-100 rounded-2xl"
     >
       <X :size="14" />

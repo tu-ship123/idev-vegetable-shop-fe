@@ -45,10 +45,7 @@ const slides = [
 onMounted(async () => {
   try {
     const res = await productApi.getFeaturedProducts()
-    
-    // Bọc lót lấy mảng sản phẩm nổi bật
-    const resData = res.data || res
-    const beProducts = Array.isArray(resData) ? resData : (resData.content || [])
+    const beProducts = Array.isArray(res) ? res : (res.content || [])
     
     featuredProducts.value = beProducts.map(p => ({
       ...p,

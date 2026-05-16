@@ -5,12 +5,14 @@ import ProductCard from '@/components/ProductCard.vue'
 import ProductFilter from '@/components/ProductFilter.vue'
 import Pagination from '@/components/Pagination.vue'
 import { productApi } from '@/api/productApi'
+import { useCartStore } from '@/stores/cart'
 
 const products = ref([])
 const categories = ref([])
 const isLoading = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
+const cartStore = useCartStore()
 
 const currentFilters = ref({
   category: 'all',
@@ -30,11 +32,10 @@ const fetchProducts = async () => {
       sort: 'desc'
     }
 
-    // 1. Gọi và bọc lót dữ liệu Sản phẩm
     const res = await productApi.getProducts(params)
-    const resData = res.data || res // Dò tìm tầng chứa data
-    const beProducts = resData.content || resData || [] // Lấy mảng an toàn
-    totalPages.value = resData.totalPages || 1
+    // ĐÃ SỬA: Đổi toàn bộ resData thành res
+    const beProducts = res.content || res || [] 
+    totalPages.value = res.totalPages || 1
 
     products.value = beProducts.map(p => ({
       ...p,
@@ -44,16 +45,20 @@ const fetchProducts = async () => {
       reviews: 0
     }))
 
-    // 2. Gọi và bọc lót dữ liệu Danh mục
     const catRes = await productApi.getCategories()
-    const catData = catRes.data || catRes
-    categories.value = Array.isArray(catData) ? catData : [] // Ép kiểu Array tuyệt đối
+    // ĐÃ SỬA: Bỏ dò tìm catRes.data, dùng thẳng catRes
+    categories.value = Array.isArray(catRes) ? catRes : [] 
 
   } catch (error) {
     console.error('API fetch failed:', error)
   } finally {
     isLoading.value = false
   }
+}
+
+const handleAddToCart = (product) => {
+  cartStore.addToCart(product, 1)
+  alert(`Đã thêm ${product.name} vào giỏ hàng thành công!`)
 }
 
 const handleFilter = (filters) => {
@@ -71,7 +76,6 @@ onMounted(() => {
   <div class="min-h-screen bg-[#fcfcfc] py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
-      <!-- Page Header -->
       <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
         <div>
           <p class="text-[10px] font-black text-green-600 uppercase tracking-[4px] mb-4">Cửa hàng hữu cơ</p>
@@ -95,18 +99,15 @@ onMounted(() => {
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
-        <!-- Sidebar Filter (VSI-45) -->
         <div class="hidden lg:block">
           <ProductFilter :categories="categories" @filter="handleFilter" />
         </div>
 
-        <!-- Mobile Filter Toggle -->
         <button class="lg:hidden w-full flex items-center justify-center gap-3 bg-white border border-gray-100 py-4 rounded-2xl text-sm font-bold text-gray-900 shadow-sm mb-8">
           <Filter :size="18" class="text-green-600" />
           Bộ lọc & Tìm kiếm
         </button>
 
-        <!-- Product Grid (VSI-44) -->
         <div class="lg:col-span-3">
           <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 animate-pulse">
             <div v-for="i in 6" :key="i" class="h-[450px] bg-gray-100 rounded-[40px]"></div>
@@ -117,10 +118,10 @@ onMounted(() => {
               v-for="product in products" 
               :key="product.id" 
               :product="product" 
+              @add-to-cart="handleAddToCart"
             />
           </div>
 
-          <!-- Empty State -->
           <div v-if="!isLoading && products.length === 0" class="py-32 text-center">
             <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
               <Search :size="48" />
@@ -129,7 +130,6 @@ onMounted(() => {
             <p class="text-gray-400 text-sm">Vui lòng thử lại với các điều kiện lọc khác.</p>
           </div>
 
-          <!-- Pagination (VSI-46) -->
           <div v-if="!isLoading && products.length > 0" class="mt-20">
             <Pagination 
               :current-page="currentPage" 

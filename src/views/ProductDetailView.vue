@@ -7,38 +7,85 @@ import {
 import { productApi } from '@/api/productApi'
 import ProductCard from '@/components/ProductCard.vue'
 import { formatPrice } from '@/utils/formatters'
+import { useCartStore } from '@/stores/cart'
 
 const route = useRoute()
 const router = useRouter()
+const cartStore = useCartStore()
 const product = ref(null)
 const isLoading = ref(true)
 const activeTab = ref('description')
 const quantity = ref(1)
 
+const handleAddToCart = () => {
+  if (!product.value) return
+  cartStore.addToCart(product.value, quantity.value)
+  alert(`Đã thêm ${quantity.value} ${product.value.name} vào giỏ hàng thành công!`)
+}
+
 const fetchProductDetail = async () => {
   isLoading.value = true
   try {
     const res = await productApi.getProductById(route.params.id)
-    const p = res.data || res // Dò tìm tầng chứa data
     
-    if (!p) throw new Error("Không nhận được dữ liệu sản phẩm")
+    // In thẳng dữ liệu gốc ra Console để "bắt tận tay" Backend trả về cái gì
+    console.log("📦 Dữ liệu gốc từ API trả về:", res)
+
+    // SỬA LỖI: Vét cạn mọi ngóc ngách dữ liệu của Backend
+    let p = res;
+    if (p?.data && typeof p.data === 'object') p = p.data;
+    if (p?.content && typeof p.content === 'object') p = p.content; // Thêm vụ bọc trong content
+    if (p?.result && typeof p.result === 'object') p = p.result;
+    
+    // Đề phòng BE "vui tính" ném về một mảng chứa 1 phần tử
+    if (Array.isArray(p) && p.length > 0) p = p[0];
+
+    // Tìm ID (đề phòng BE đổi tên biến thành productId)
+    const productId = p?.id || p?.productId;
+
+    if (!p || !productId) {
+      throw new Error("Không tìm thấy thuộc tính 'id' trong dữ liệu trả về.")
+    }
 
     product.value = {
       ...p,
-      image: p.imageUrl,
-      category: p.categoryName,
+      id: productId, // Chuẩn hóa lại ID
+      image: p.imageUrl || p.image, 
+      category: p.categoryName || p.category,
       rating: 5,
       reviews: 0,
       shortDesc: p.description, 
       specs: [
-        { label: 'Đơn vị', value: p.unit || 'N/A' }, // Chống null
+        { label: 'Đơn vị', value: p.unit || 'N/A' },
         { label: 'Trạng thái', value: p.stockQty > 0 ? 'Còn hàng' : 'Hết hàng' },
-        { label: 'Ngày nhập', value: p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN') : 'Mới' } // Chống null ngày tháng
+        { label: 'Ngày nhập', value: p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN') : 'Mới' }
       ],
       related: [] 
     }
+
+    // GIẢI QUYẾT LUÔN PHẦN REVIEW: Fetch danh sách "Sản phẩm tương tự"
+    if (p.categoryId) {
+      const relatedRes = await productApi.getProducts({ categoryId: p.categoryId, size: 5 })
+      let relatedData = relatedRes;
+      if (relatedData?.data) relatedData = relatedData.data;
+      if (relatedData?.content) relatedData = relatedData.content;
+      if (!Array.isArray(relatedData)) relatedData = [];
+      
+      product.value.related = relatedData
+        .filter(item => item.id !== productId)
+        .map(item => ({
+          ...item,
+          image: item.imageUrl || item.image,
+          category: item.categoryName || item.category,
+          rating: 5,
+          reviews: 0
+        }))
+        .slice(0, 4) 
+    }
+
   } catch (error) {
-    console.error(error)
+    console.error("❌ Lỗi tải chi tiết sản phẩm:", error)
+    // Tạm thời comment dòng này lại để nó không đá bạn về trang ngoài nữa
     router.push('/products')
   } finally {
     isLoading.value = false
@@ -47,7 +94,7 @@ const fetchProductDetail = async () => {
 
 onMounted(() => {
   fetchProductDetail()
-  window.scrollTo(0, 0)
+  window.scrollTo(0, 0) // Tự động cuộn lên đầu trang
 })
 </script>
 
@@ -122,25 +169,32 @@ onMounted(() => {
           <div class="flex flex-col gap-8">
             <div class="flex items-center gap-6">
               <div class="bg-white border border-gray-100 rounded-3xl p-2 flex items-center shadow-sm">
-                <button 
-                  @click="quantity > 1 && quantity--"
-                  class="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors"
-                >
-                  <Minus :size="20" />
-                </button>
-                <input 
-                  type="number" 
-                  v-model="quantity" 
-                  class="w-16 text-center border-none focus:ring-0 font-black text-xl text-gray-900" 
-                />
-                <button 
-                  @click="quantity++"
-                  class="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors"
-                >
-                  <Plus :size="20" />
-                </button>
-              </div>
-              <button class="flex-1 bg-gray-900 text-white h-16 rounded-[28px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-green-600 shadow-xl shadow-gray-200 transition-all duration-500 group">
+                  <button 
+                    @click="quantity > 1 && quantity--"
+                    class="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors"
+                  >
+                    <Minus :size="20" />
+                  </button>
+                  
+                  <input 
+                    type="number" 
+                    v-model="quantity" 
+                    :min="1"
+                    @input="quantity = Math.max(1, quantity)"
+                    class="w-16 text-center border-none focus:ring-0 font-black text-xl text-gray-900" 
+                  />
+                  
+                  <button 
+                    @click="quantity++"
+                    class="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors"
+                  >
+                    <Plus :size="20" />
+                  </button>
+                </div>
+              <button 
+                @click="handleAddToCart"
+                class="flex-1 bg-gray-900 text-white h-16 rounded-[28px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-green-600 shadow-xl shadow-gray-200 transition-all duration-500 group"
+              >
                 <ShoppingCart :size="20" class="transition-transform group-hover:-translate-y-1" />
                 Thêm vào giỏ hàng
               </button>

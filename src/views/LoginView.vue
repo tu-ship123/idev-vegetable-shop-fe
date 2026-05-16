@@ -66,7 +66,7 @@ const handleRegister = async () => {
       <div class="absolute inset-0 flex" style="font-family: 'Poppins', sans-serif;">
         
         <div class="w-1/2 h-full flex flex-col justify-center px-10 sm:px-14">
-          <form @submit.prevent="handleRegister" class="space-y-4 w-full" :class="{ 'pointer-events-none opacity-0': activeTab === 'login' }">
+          <form v-show="activeTab === 'register'" @submit.prevent="handleRegister" class="space-y-4 w-full">
             
             <div class="text-center mb-6">
               <h3 class="text-6xl font-bold text-[#82ae46] tracking-wide mb-2 uppercase" style="font-family: 'Amatic SC', cursive;">Đăng Ký</h3>
@@ -97,7 +97,7 @@ const handleRegister = async () => {
         </div>
 
         <div class="w-1/2 h-full flex flex-col justify-center px-10 sm:px-14">
-          <form @submit.prevent="handleLogin" class="space-y-6 w-full" :class="{ 'pointer-events-none opacity-0': activeTab === 'register' }">
+          <form v-show="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-6 w-full">
             
             <div class="text-center mb-8">
               <h3 class="text-6xl font-bold text-[#82ae46] tracking-wide mb-2 uppercase" style="font-family: 'Amatic SC', cursive;">Đăng Nhập</h3>
@@ -130,7 +130,7 @@ const handleRegister = async () => {
       </div>
 
       <div 
-        class="absolute top-0 left-0 w-1/2 h-full bg-[#82ae46] transition-all duration-[800ms] cubic-bezier(0.68, -0.55, 0.265, 1.55) z-20 flex flex-col justify-center items-center text-white p-12 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.2)]"
+        class="absolute top-0 left-0 w-1/2 h-full bg-[#82ae46] transition-all duration-[800ms] ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] z-20 flex flex-col justify-center items-center text-white p-12 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.2)]"
         :style="{ transform: activeTab === 'login' ? 'translateX(0)' : 'translateX(100%)' }"
       >
         <div class="absolute inset-0 pointer-events-none">
@@ -191,16 +191,5 @@ const handleRegister = async () => {
 @keyframes bounceCustom {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
-}
-
-.cubic-bezier {
-  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-form {
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-.opacity-0 {
-  transform: scale(0.95);
 }
 </style>
