@@ -4,7 +4,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
-import { Home, Leaf, ShieldCheck, Truck } from 'lucide-vue-next'
+// ĐÃ SỬA: Thêm Eye và EyeOff vào để làm icon con mắt
+import { Home, Leaf, ShieldCheck, Truck, Eye, EyeOff } from 'lucide-vue-next'
 import bgAuth from '@/assets/images/bg_1.jpg'
 
 const authStore = useAuthStore()
@@ -12,6 +13,11 @@ const router = useRouter()
 
 const activeTab = ref('login') 
 const isLoading = ref(false)
+
+// ĐÃ THÊM: Biến điều khiển ẩn/hiện mật khẩu
+const showLoginPwd = ref(false)
+const showRegPwd = ref(false)
+const showRegConfirmPwd = ref(false)
 
 // ================= STATE FORM & LOGIC =================
 const loginForm = ref({ email: '', password: '' })
@@ -61,15 +67,18 @@ const handleRegister = async () => {
   >
     <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
 
-    <div class="relative z-10 w-full max-w-4xl h-[620px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[24px] overflow-hidden animate-fade-in">
+    <div class="relative z-10 w-full max-w-4xl min-h-[500px] md:h-[620px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[24px] overflow-hidden animate-fade-in py-10 md:py-0">
       
-      <div class="absolute inset-0 flex" style="font-family: 'Poppins', sans-serif;">
+      <div class="md:absolute inset-0 flex" style="font-family: 'Poppins', sans-serif;">
         
-        <div class="w-1/2 h-full flex flex-col justify-center px-10 sm:px-14">
+        <div 
+          class="w-full md:w-1/2 h-full flex flex-col justify-center px-6 sm:px-14 transition-all duration-500"
+          :class="{'hidden md:flex': activeTab !== 'register'}"
+        >
           <form v-show="activeTab === 'register'" @submit.prevent="handleRegister" class="space-y-4 w-full">
             
             <div class="text-center mb-6">
-              <h3 class="text-6xl font-bold text-[#82ae46] tracking-wide mb-2 uppercase" style="font-family: 'Amatic SC', cursive;">Đăng Ký</h3>
+              <h3 class="text-5xl md:text-6xl font-bold text-[#82ae46] tracking-wide mb-2 uppercase" style="font-family: 'Amatic SC', cursive;">Đăng Ký</h3>
               <p class="text-[9px] text-gray-400 uppercase tracking-[0.25em] font-medium">Gia nhập cộng đồng rau sạch</p>
             </div>
             
@@ -77,8 +86,20 @@ const handleRegister = async () => {
             <BaseInput v-model="regForm.email" label="ĐỊA CHỈ EMAIL" type="email" placeholder="Nhập email của bạn" :error="regErrors.email" />
             
             <div class="grid grid-cols-2 gap-3">
-              <BaseInput v-model="regForm.password" label="MẬT KHẨU" type="password" placeholder="••••••••" :error="regErrors.password" />
-              <BaseInput v-model="regForm.confirmPassword" label="XÁC NHẬN" type="password" placeholder="••••••••" :error="regErrors.confirmPassword" />
+              <div class="relative">
+                <BaseInput v-model="regForm.password" label="MẬT KHẨU" :type="showRegPwd ? 'text' : 'password'" placeholder="••••••••" :error="regErrors.password" />
+                <button type="button" @click="showRegPwd = !showRegPwd" class="absolute right-2 top-[32px] p-2 text-gray-400 hover:text-[#82ae46] transition-colors z-10">
+                  <Eye v-if="!showRegPwd" :size="16" />
+                  <EyeOff v-else :size="16" />
+                </button>
+              </div>
+              <div class="relative">
+                <BaseInput v-model="regForm.confirmPassword" label="XÁC NHẬN" :type="showRegConfirmPwd ? 'text' : 'password'" placeholder="••••••••" :error="regErrors.confirmPassword" />
+                <button type="button" @click="showRegConfirmPwd = !showRegConfirmPwd" class="absolute right-2 top-[32px] p-2 text-gray-400 hover:text-[#82ae46] transition-colors z-10">
+                  <Eye v-if="!showRegConfirmPwd" :size="16" />
+                  <EyeOff v-else :size="16" />
+                </button>
+              </div>
             </div>
 
             <BaseButton type="submit" variant="primary" class="w-full !py-3.5 !rounded-full shadow-lg mt-4 shadow-[#82ae46]/30 uppercase tracking-[0.2em] text-[11px] font-bold" :disabled="isLoading">
@@ -92,25 +113,37 @@ const handleRegister = async () => {
                   ĐĂNG NHẬP
                 </button>
               </p>
+              <button type="button" @click="router.push('/')" class="md:hidden mt-6 text-[10px] text-gray-400 font-bold hover:text-[#82ae46] uppercase tracking-[2px] flex items-center justify-center gap-1 mx-auto">
+                <Home :size="14" /> VỀ TRANG CHỦ
+              </button>
             </div>
           </form>
         </div>
 
-        <div class="w-1/2 h-full flex flex-col justify-center px-10 sm:px-14">
+        <div 
+          class="w-full md:w-1/2 h-full flex flex-col justify-center px-6 sm:px-14 transition-all duration-500"
+          :class="{'hidden md:flex': activeTab !== 'login'}"
+        >
           <form v-show="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-6 w-full">
             
             <div class="text-center mb-8">
-              <h3 class="text-6xl font-bold text-[#82ae46] tracking-wide mb-2 uppercase" style="font-family: 'Amatic SC', cursive;">Đăng Nhập</h3>
+              <h3 class="text-5xl md:text-6xl font-bold text-[#82ae46] tracking-wide mb-2 uppercase" style="font-family: 'Amatic SC', cursive;">Đăng Nhập</h3>
               <p class="text-[9px] text-gray-400 uppercase tracking-[0.25em] font-medium">Chào mừng bạn quay lại</p>
             </div>
 
             <BaseInput v-model="loginForm.email" label="ĐỊA CHỈ EMAIL" type="email" placeholder="Nhập email của bạn" :error="loginErrors.email" />
             
             <div class="space-y-1 relative">
-              <router-link to="/forgot-password" class="absolute right-0 top-0 text-[9px] text-[#82ae46] font-bold uppercase tracking-[0.15em] z-10 hover:underline">
+              <router-link to="/forgot-password" class="absolute right-0 top-0 text-[9px] text-[#82ae46] font-bold uppercase tracking-[0.15em] z-20 hover:underline">
                 QUÊN MẬT KHẨU?
               </router-link>
-              <BaseInput v-model="loginForm.password" label="MẬT KHẨU" type="password" placeholder="Nhập mật khẩu" :error="loginErrors.password" />
+              <div class="relative">
+                <BaseInput v-model="loginForm.password" label="MẬT KHẨU" :type="showLoginPwd ? 'text' : 'password'" placeholder="Nhập mật khẩu" :error="loginErrors.password" />
+                <button type="button" @click="showLoginPwd = !showLoginPwd" class="absolute right-2 top-[30px] p-2 text-gray-400 hover:text-[#82ae46] transition-colors z-10">
+                  <Eye v-if="!showLoginPwd" :size="18" />
+                  <EyeOff v-else :size="18" />
+                </button>
+              </div>
             </div>
 
             <BaseButton type="submit" variant="primary" class="w-full !py-3.5 !rounded-full shadow-lg shadow-[#82ae46]/30 uppercase tracking-[0.2em] text-[11px] font-bold mt-2" :disabled="isLoading">
@@ -124,13 +157,16 @@ const handleRegister = async () => {
                   ĐĂNG KÝ NGAY
                 </button>
               </p>
+              <button type="button" @click="router.push('/')" class="md:hidden mt-6 text-[10px] text-gray-400 font-bold hover:text-[#82ae46] uppercase tracking-[2px] flex items-center justify-center gap-1 mx-auto">
+                <Home :size="14" /> VỀ TRANG CHỦ
+              </button>
             </div>
           </form>
         </div>
       </div>
 
       <div 
-        class="absolute top-0 left-0 w-1/2 h-full bg-[#82ae46] transition-all duration-[800ms] ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] z-20 flex flex-col justify-center items-center text-white p-12 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.2)]"
+        class="hidden md:flex absolute top-0 left-0 w-1/2 h-full bg-[#82ae46] transition-all duration-[800ms] ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] z-20 flex-col justify-center items-center text-white p-12 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.2)]"
         :style="{ transform: activeTab === 'login' ? 'translateX(0)' : 'translateX(100%)' }"
       >
         <div class="absolute inset-0 pointer-events-none">
