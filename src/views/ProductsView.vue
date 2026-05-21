@@ -25,7 +25,7 @@ const fetchProducts = async () => {
   try {
     const params = {
       page: currentPage.value - 1,
-      size: 6,
+      size: 12,
       categoryId: currentFilters.value.category !== 'all' ? currentFilters.value.category : undefined,
       maxPrice: currentFilters.value.maxPrice,
       name: currentFilters.value.q || undefined,

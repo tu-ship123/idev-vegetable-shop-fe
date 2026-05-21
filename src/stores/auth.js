@@ -29,7 +29,18 @@ export const useAuthStore = defineStore('auth', {
 
     async register(userData) {
       try {
-        await authApi.register(userData);
+        const response = await authApi.register(userData);
+        
+        // Backend trả về AuthResponse chứa token y như lúc login
+        const { token, email, fullName, role } = response;
+        if (token) {
+          const userInfo = { email, fullName, role };
+          localStorage.setItem('access_token', token);
+          localStorage.setItem('user_info', JSON.stringify(userInfo));
+          
+          this.isLoggedIn = true;
+          this.user = userInfo;
+        }
         return true;
       } catch (error) {
         console.error("Lỗi đăng ký:", error);

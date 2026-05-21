@@ -24,8 +24,8 @@ onMounted(async () => {
     const res = await paymentApi.verifyReturn(queryString)
     const data = res.data || res
     
-    // VNPay quy định ResponseCode == '00' là giao dịch thành công
-    if (data.paymentStatus === 'SUCCESS') {
+    // ĐÃ SỬA: Check cả 2 trường hợp tên biến (status hoặc paymentStatus) từ Backend trả về
+    if (data.status === 'SUCCESS' || data.paymentStatus === 'SUCCESS') {
       status.value = 'success'
       message.value = 'Thanh toán thành công! Cảm ơn bạn đã mua hàng.'
     } else {

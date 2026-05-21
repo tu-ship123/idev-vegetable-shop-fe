@@ -4,7 +4,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
-// ĐÃ SỬA: Thêm Eye và EyeOff vào để làm icon con mắt
 import { Home, Leaf, ShieldCheck, Truck, Eye, EyeOff } from 'lucide-vue-next'
 import bgAuth from '@/assets/images/bg_1.jpg'
 
@@ -14,16 +13,15 @@ const router = useRouter()
 const activeTab = ref('login') 
 const isLoading = ref(false)
 
-// ĐÃ THÊM: Biến điều khiển ẩn/hiện mật khẩu
 const showLoginPwd = ref(false)
 const showRegPwd = ref(false)
 const showRegConfirmPwd = ref(false)
 
-// ================= STATE FORM & LOGIC =================
+// ĐÃ SỬA: Thêm trường phone vào Form Đăng ký
 const loginForm = ref({ email: '', password: '' })
 const loginErrors = ref({ email: '', password: '' })
-const regForm = ref({ name: '', email: '', password: '', confirmPassword: '' })
-const regErrors = ref({ name: '', email: '', password: '', confirmPassword: '' })
+const regForm = ref({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
+const regErrors = ref({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
 
 const handleLogin = async () => {
   loginErrors.value = { email: '', password: '' }
@@ -40,21 +38,23 @@ const handleLogin = async () => {
 }
 
 const handleRegister = async () => {
-  regErrors.value = { name: '', email: '', password: '', confirmPassword: '' }
+  regErrors.value = { name: '', email: '', phone: '', password: '', confirmPassword: '' }
   if (regForm.value.password !== regForm.value.confirmPassword) {
     regErrors.value.confirmPassword = 'Mật khẩu không khớp'
     return
   }
   isLoading.value = true
   try {
+    // ĐÃ SỬA: Map trường phone vào phoneNumber để gửi xuống Backend
     const success = await authStore.register({
       fullName: regForm.value.name,
       email: regForm.value.email,
+      phoneNumber: regForm.value.phone,
       password: regForm.value.password
     })
     if (success) {
-      activeTab.value = 'login'
-      loginForm.value.email = regForm.value.email
+      // Đăng ký xong là có token rồi, cho bay thẳng về Trang chủ luôn!
+      router.push('/') 
     }
   } finally { isLoading.value = false }
 }
@@ -83,7 +83,11 @@ const handleRegister = async () => {
             </div>
             
             <BaseInput v-model="regForm.name" label="HỌ VÀ TÊN" placeholder="Nhập họ và tên" :error="regErrors.name" />
-            <BaseInput v-model="regForm.email" label="ĐỊA CHỈ EMAIL" type="email" placeholder="Nhập email của bạn" :error="regErrors.email" />
+            
+            <div class="grid grid-cols-2 gap-3">
+              <BaseInput v-model="regForm.email" label="ĐỊA CHỈ EMAIL" type="email" placeholder="Nhập email" :error="regErrors.email" />
+              <BaseInput v-model="regForm.phone" label="SỐ ĐIỆN THOẠI" type="tel" placeholder="Nhập SĐT" :error="regErrors.phone" />
+            </div>
             
             <div class="grid grid-cols-2 gap-3">
               <div class="relative">
