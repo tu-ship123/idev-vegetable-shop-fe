@@ -98,7 +98,10 @@ const handleCheckout = async () => {
               v-model="orderForm.shippingAddress"
               rows="3" 
               placeholder="Nhập địa chỉ nhận hàng chi tiết (Số nhà, Đường, Phường/Xã...)"
-              class="w-full bg-gray-50 border-none rounded-2xl p-5 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-green-500 transition-all resize-none placeholder:text-gray-400"
+              class="w-full bg-gray-50 border rounded-2xl p-5 text-sm font-medium text-gray-900 focus:ring-2 transition-all resize-none placeholder:text-gray-400"
+              :class="errorMsg && !orderForm.shippingAddress.trim() 
+                ? 'border-red-500 bg-red-50/10 focus:ring-red-500' 
+                : 'border-transparent focus:ring-green-500'"
             ></textarea>
           </div>
 

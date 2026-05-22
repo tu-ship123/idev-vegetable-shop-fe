@@ -10,6 +10,38 @@ const cartStore = useCartStore()
 const router = useRouter()
 
 const isMobileMenuOpen = ref(false)
+const showSearchInput = ref(false)
+const searchVal = ref('')
+const searchInputRef = ref(null)
+
+const toggleSearch = () => {
+  if (showSearchInput.value) {
+    triggerSearch()
+  } else {
+    showSearchInput.value = true
+    setTimeout(() => {
+      searchInputRef.value?.focus()
+    }, 100)
+  }
+}
+
+const triggerSearch = () => {
+  if (searchVal.value.trim()) {
+    router.push({ path: '/products', query: { q: searchVal.value.trim() } })
+    showSearchInput.value = false
+    searchVal.value = ''
+  } else {
+    showSearchInput.value = false
+  }
+}
+
+const handleBlur = () => {
+  setTimeout(() => {
+    if (!searchVal.value.trim()) {
+      showSearchInput.value = false
+    }
+  }, 200)
+}
 
 const handleLogout = () => {
   authStore.logout()
@@ -43,7 +75,26 @@ onMounted(() => {
       </nav>
 
       <div class="flex items-center gap-5 text-gray-800">
-        <Search :size="18" class="cursor-pointer hover:text-[#82ae46]" />
+        <!-- Cụm tìm kiếm toàn cục trượt mở premium -->
+        <div class="relative flex items-center">
+          <transition name="slide-fade">
+            <input 
+              v-if="showSearchInput"
+              ref="searchInputRef"
+              v-model="searchVal"
+              @keyup.enter="triggerSearch"
+              @blur="handleBlur"
+              type="text"
+              placeholder="Tìm sản phẩm..."
+              class="w-36 sm:w-44 bg-gray-50 border border-gray-100 rounded-full py-1.5 px-4 mr-2 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#82ae46]/20 focus:border-[#82ae46] transition-all"
+            />
+          </transition>
+          <Search 
+            :size="18" 
+            class="cursor-pointer hover:text-[#82ae46] transition-all duration-300 hover:scale-110" 
+            @click="toggleSearch"
+          />
+        </div>
         
         <router-link to="/cart" class="flex items-center gap-1 cursor-pointer hover:text-[#82ae46]">
           <ShoppingCart :size="18" />
@@ -118,5 +169,18 @@ onMounted(() => {
 @keyframes slideLeft {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
+}
+
+/* Hiệu ứng slide-fade cho ô tìm kiếm */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(15px);
+  opacity: 0;
 }
 </style>

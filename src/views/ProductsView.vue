@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { LayoutGrid, List, SlidersHorizontal, Search, Filter } from 'lucide-vue-next'
 import ProductCard from '@/components/ProductCard.vue'
 import ProductFilter from '@/components/ProductFilter.vue'
@@ -7,6 +8,7 @@ import Pagination from '@/components/Pagination.vue'
 import { productApi } from '@/api/productApi'
 import { useCartStore } from '@/stores/cart'
 
+const route = useRoute()
 const products = ref([])
 const categories = ref([])
 const isLoading = ref(true)
@@ -67,7 +69,16 @@ const handleFilter = (filters) => {
   fetchProducts()
 }
 
+watch(() => route.query.q, (newQ) => {
+  currentFilters.value.q = newQ || ''
+  currentPage.value = 1
+  fetchProducts()
+})
+
 onMounted(() => {
+  if (route.query.q) {
+    currentFilters.value.q = route.query.q
+  }
   fetchProducts()
 })
 </script>
@@ -100,7 +111,7 @@ onMounted(() => {
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
         <div class="hidden lg:block">
-          <ProductFilter :categories="categories" @filter="handleFilter" />
+          <ProductFilter :categories="categories" :search="currentFilters.q" @filter="handleFilter" />
         </div>
 
         <button class="lg:hidden w-full flex items-center justify-center gap-3 bg-white border border-gray-100 py-4 rounded-2xl text-sm font-bold text-gray-900 shadow-sm mb-8">

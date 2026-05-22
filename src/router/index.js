@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth' // Import Pinia Auth Store
+import { useCartStore } from '@/stores/cart' // Import Pinia Cart Store
 
 const routes = [
   {
@@ -78,6 +79,13 @@ router.beforeEach((to, from, next) => {
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
+  } else if (to.name === 'checkout') {
+    const cartStore = useCartStore()
+    if (cartStore.items.length === 0) {
+      next({ name: 'products' }) // Chặn không cho vào checkout khi giỏ hàng trống
+    } else {
+      next()
+    }
   } else if ((to.name === 'login') && isAuthenticated) {
     next({ name: 'home' })
   } else {
