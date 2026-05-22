@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Search, Filter, X } from 'lucide-vue-next'
 import { formatPrice } from '@/utils/formatters'
 
@@ -7,16 +7,22 @@ const props = defineProps({
   categories: {
     type: Array,
     required: true
-    // ĐÃ XÓA: default rỗng
+  },
+  search: {
+    type: String,
+    default: ''
   }
 })
 
-// ĐÃ SỬA: Bỏ 'search' do không sử dụng
 const emit = defineEmits(['filter'])
 
-const searchQuery = ref('')
+const searchQuery = ref(props.search)
 const selectedCategory = ref('all')
 const priceRange = ref(1000000) // Khởi tạo với giá trị max
+
+watch(() => props.search, (newVal) => {
+  searchQuery.value = newVal
+})
 
 const applyFilters = () => {
   emit('filter', {

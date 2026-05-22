@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import { useRouter } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
@@ -8,6 +9,7 @@ import { Home, Leaf, ShieldCheck, Truck, Eye, EyeOff } from 'lucide-vue-next'
 import bgAuth from '@/assets/images/bg_1.jpg'
 
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 const router = useRouter()
 
 const activeTab = ref('login') 
@@ -33,7 +35,10 @@ const handleLogin = async () => {
   isLoading.value = true
   try {
     const success = await authStore.login(loginForm.value)
-    if (success) router.push('/')
+    if (success) {
+      await cartStore.syncCartToDb() // Đồng bộ giỏ hàng offline lên DB
+      router.push('/')
+    }
   } finally { isLoading.value = false }
 }
 
@@ -53,6 +58,7 @@ const handleRegister = async () => {
       password: regForm.value.password
     })
     if (success) {
+      await cartStore.syncCartToDb() // Đồng bộ giỏ hàng offline lên DB
       // Đăng ký xong là có token rồi, cho bay thẳng về Trang chủ luôn!
       router.push('/') 
     }
