@@ -24,13 +24,23 @@ onMounted(async () => {
     const res = await paymentApi.verifyReturn(queryString)
     const data = res.data || res
     
-    // ĐÃ SỬA: Check cả 2 trường hợp tên biến (status hoặc paymentStatus) từ Backend trả về
-    if (data.status === 'SUCCESS' || data.paymentStatus === 'SUCCESS') {
+    // ĐÃ SỬA: Bắt chuẩn biến 'success' (true/false) từ Backend trả về
+    if (data.success === true) {
       status.value = 'success'
-      message.value = 'Thanh toán thành công! Cảm ơn bạn đã mua hàng.'
+      // Tận dụng luôn câu message cực chuẩn từ Backend
+      message.value = data.message || 'Thanh toán thành công! Cảm ơn bạn đã mua hàng.'
+      
+      const timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(timer)
+          router.push('/') 
+        }
+      }, 1000)
+
     } else {
       status.value = 'error'
-      message.value = 'Giao dịch bị hủy hoặc thanh toán thất bại.'
+      message.value = data.message || 'Giao dịch bị hủy hoặc thanh toán thất bại.'
     }
   } catch (error) {
     status.value = 'error'
