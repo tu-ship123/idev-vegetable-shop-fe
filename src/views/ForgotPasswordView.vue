@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import { useRouter } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
@@ -8,7 +9,9 @@ import { Home, Leaf, ShieldCheck, Truck, ArrowLeft } from 'lucide-vue-next'
 import bgForgot from '@/assets/images/category-1.jpg'
 
 const authStore = useAuthStore()
+const toastStore = useToastStore()
 const router = useRouter()
+
 
 // Quản lý trạng thái 2 bước
 const step = ref(1) // Bước 1: Nhập email | Bước 2: Nhập OTP & Đổi mật khẩu
@@ -68,7 +71,7 @@ const handleResetPassword = async () => {
       newPassword: newPassword.value
     })
     
-    alert('Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.')
+    toastStore.add('Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.', 'success')
     router.push('/login')
   } catch (err) {
     console.error(err)

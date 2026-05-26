@@ -1,20 +1,26 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { LayoutGrid, List, SlidersHorizontal, Search, Filter } from 'lucide-vue-next'
 import ProductCard from '@/components/ProductCard.vue'
 import ProductFilter from '@/components/ProductFilter.vue'
 import Pagination from '@/components/Pagination.vue'
 import { productApi } from '@/api/productApi'
 import { useCartStore } from '@/stores/cart'
+import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const router = useRouter()
 const products = ref([])
 const categories = ref([])
 const isLoading = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const cartStore = useCartStore()
+const toastStore = useToastStore()
+const authStore = useAuthStore()
+
 
 const currentFilters = ref({
   category: 'all',
@@ -59,9 +65,15 @@ const fetchProducts = async () => {
 }
 
 const handleAddToCart = (product) => {
+  if (!authStore.isLoggedIn) {
+    toastStore.add('Vui lòng đăng nhập để thực hiện mua hàng!', 'warning')
+    router.push('/login')
+    return
+  }
   cartStore.addToCart(product, 1)
-  alert(`Đã thêm ${product.name} vào giỏ hàng thành công!`)
+  toastStore.add(`Đã thêm ${product.name} vào giỏ hàng thành công!`, 'success')
 }
+
 
 const handleFilter = (filters) => {
   currentFilters.value = filters
