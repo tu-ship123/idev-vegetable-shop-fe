@@ -42,6 +42,13 @@ const routes = [
         name: 'product-detail',
         component: () => import('@/views/ProductDetailView.vue'),
         meta: { title: 'Chi tiết sản phẩm | Cửa hàng Rau sạch', pageTitle: 'Chi tiết sản phẩm' }
+      },
+      // ĐÃ THÊM: Route cho trang Lịch sử mua hàng
+      {
+        path: 'orders',
+        name: 'orders',
+        component: () => import('@/views/OrderHistoryView.vue'),
+        meta: { title: 'Lịch sử mua hàng | Cửa hàng Rau sạch', requiresAuth: true, pageTitle: 'Lịch sử mua hàng' }
       }
     ]
   },

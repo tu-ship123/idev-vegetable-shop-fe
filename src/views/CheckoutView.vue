@@ -5,15 +5,15 @@ import { useCartStore } from '@/stores/cart'
 import { orderApi } from '@/api/orderApi'
 import { formatPrice } from '@/utils/formatters'
 import { paymentApi } from '@/api/paymentApi'
-import { MapPin, CreditCard, FileText, CheckCircle2 } from 'lucide-vue-next'
+// ĐÃ SỬA: Import thêm XCircle, Loader2
+import { MapPin, CreditCard, FileText, CheckCircle2, XCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const cartStore = useCartStore()
 
-// State cho Form đặt hàng
 const orderForm = ref({
   shippingAddress: '',
-  paymentMethod: 'COD', // Mặc định là Thanh toán khi nhận hàng
+  paymentMethod: 'COD',
   note: ''
 })
 
@@ -21,7 +21,12 @@ const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const errorMsg = ref('')
 
-// Kiểm tra giỏ hàng trống thì đá về trang sản phẩm
+// ĐÃ THÊM: Biến và logic áp dụng mã tại trang thanh toán
+const couponInput = ref('')
+const handleApplyCoupon = async () => {
+  await cartStore.applyCouponCode(couponInput.value)
+}
+
 onMounted(() => {
   if (cartStore.items.length === 0) {
     router.push('/products')
@@ -41,16 +46,15 @@ const handleCheckout = async () => {
     const orderPayload = {
       shippingAddress: orderForm.value.shippingAddress,
       paymentMethod: orderForm.value.paymentMethod,
-      note: orderForm.value.note
+      note: orderForm.value.note,
+      // Truyền thêm mã giảm giá (nếu có) lên BE để lưu vào DB
+      couponCode: cartStore.appliedCoupon?.code || null 
     }
 
     const orderRes = await orderApi.checkout(orderPayload)
-    
-    // Tìm orderId từ cục data BE trả về
     const orderData = orderRes.data || orderRes
     const orderId = orderData.id
 
-    // 2. Kiểm tra phương thức thanh toán
     if (orderForm.value.paymentMethod === 'VNPAY') {
       const vnpayRes = await paymentApi.createVnPayUrl(orderId)
       const vnpayData = vnpayRes.data || vnpayRes
@@ -62,7 +66,6 @@ const handleCheckout = async () => {
       }
     }
 
-    // 3. Nếu là COD
     isSuccess.value = true
     cartStore.clearCart()
     
@@ -154,18 +157,56 @@ const handleCheckout = async () => {
               </div>
             </div>
 
+            <div class="mb-6 bg-gray-800/50 p-5 rounded-3xl border border-gray-700">
+              <div class="flex gap-2 mb-3">
+                <input
+                  v-model="couponInput"
+                  type="text"
+                  placeholder="Mã giảm giá"
+                  class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-green-500 uppercase placeholder:text-gray-500"
+                  :disabled="cartStore.appliedCoupon || cartStore.isApplyingCoupon"
+                />
+                <button
+                  v-if="!cartStore.appliedCoupon"
+                  @click="handleApplyCoupon"
+                  class="bg-gray-700 hover:bg-green-500 text-white px-5 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-colors disabled:opacity-50"
+                  :disabled="cartStore.isApplyingCoupon"
+                >
+                  <Loader2 v-if="cartStore.isApplyingCoupon" class="w-4 h-4 animate-spin" />
+                  <span v-else>Áp dụng</span>
+                </button>
+                <button
+                  v-else
+                  @click="cartStore.removeCoupon"
+                  class="bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white px-5 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-colors"
+                >
+                  Xóa
+                </button>
+              </div>
+              <p v-if="cartStore.couponError" class="text-[11px] text-red-400 font-medium flex items-center gap-1">
+                <XCircle :size="12" /> {{ cartStore.couponError }}
+              </p>
+              <p v-if="cartStore.appliedCoupon" class="text-[11px] text-green-400 font-medium flex items-center gap-1">
+                <CheckCircle2 :size="12" /> Đã áp dụng: {{ cartStore.appliedCoupon.code || 'MÃ GIẢM GIÁ' }}
+              </p>
+            </div>
+
             <div class="border-t border-gray-800 pt-6 mb-8">
               <div class="flex justify-between items-center mb-4">
                 <span class="text-sm text-gray-400">Tạm tính</span>
-                <span class="font-bold text-white">{{ formatPrice(cartStore.totalPrice) }}</span>
+                <span class="font-bold text-white">{{ formatPrice(cartStore.subTotal) }}</span>
               </div>
               <div class="flex justify-between items-center mb-4">
                 <span class="text-sm text-gray-400">Phí giao hàng</span>
                 <span class="font-bold text-green-400">Miễn phí</span>
               </div>
+              <div v-if="cartStore.discountAmount > 0" class="flex justify-between items-center mb-4 text-green-400">
+                <span class="text-sm font-medium">Giảm giá</span>
+                <span class="font-bold">-{{ formatPrice(cartStore.discountAmount) }}</span>
+              </div>
               <div class="flex justify-between items-end mt-6">
                 <span class="text-xs font-black text-gray-400 uppercase tracking-widest">Tổng cộng</span>
-                <span class="text-4xl font-black text-green-400 leading-none">{{ formatPrice(cartStore.totalPrice) }}</span>
+                <span class="text-4xl font-black text-green-400 leading-none">{{ formatPrice(cartStore.finalTotal) }}</span>
               </div>
             </div>
 

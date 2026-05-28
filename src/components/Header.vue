@@ -71,6 +71,8 @@ onMounted(() => {
       <nav class="hidden lg:flex items-center gap-8 text-[13px] font-medium uppercase tracking-[2px]">
         <router-link to="/" class="hover:text-[#82ae46] transition-colors" exact-active-class="text-[#82ae46]">Trang chủ</router-link>
         <router-link to="/products" class="hover:text-[#82ae46] transition-colors" active-class="text-[#82ae46]">Cửa hàng</router-link>
+        <!-- ĐÃ THÊM: Menu Đơn hàng cho Máy tính -->
+        <router-link v-if="authStore.isLoggedIn" to="/orders" class="hover:text-[#82ae46] transition-colors" active-class="text-[#82ae46]">Đơn hàng</router-link>
         <a href="#" class="hover:text-[#82ae46]">Liên hệ</a>
       </nav>
 
@@ -140,6 +142,8 @@ onMounted(() => {
         <div class="flex flex-col py-2 px-6 gap-2 text-sm font-bold uppercase tracking-wider text-gray-700 mt-4">
           <button @click="navigateTo('/')" class="text-left hover:text-[#82ae46] py-4 border-b border-gray-50 transition-colors">Trang chủ</button>
           <button @click="navigateTo('/products')" class="text-left hover:text-[#82ae46] py-4 border-b border-gray-50 transition-colors">Cửa hàng</button>
+          <!-- ĐÃ THÊM: Menu Đơn hàng cho Mobile -->
+          <button v-if="authStore.isLoggedIn" @click="navigateTo('/orders')" class="text-left hover:text-[#82ae46] py-4 border-b border-gray-50 transition-colors">Đơn hàng</button>
           <button @click="navigateTo('/cart')" class="text-left flex justify-between items-center hover:text-[#82ae46] py-4 border-b border-gray-50 transition-colors">
             Giỏ hàng 
             <span class="bg-[#82ae46] text-white px-3 py-1 rounded-full text-xs shadow-md">{{ cartStore.totalItems }}</span>

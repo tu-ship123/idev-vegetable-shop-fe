@@ -1,18 +1,25 @@
 <script setup>
 import { useCartStore } from '@/stores/cart'
 import { formatPrice } from '@/utils/formatters'
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag } from 'lucide-vue-next'
+// ĐÃ SỬA: Import thêm icon CheckCircle2, XCircle, Loader2
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, CheckCircle2, XCircle, Loader2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 const cartStore = useCartStore()
 const router = useRouter()
+// ĐÃ THÊM: Biến lưu mã giảm giá người dùng nhập
+const couponInput = ref('')
 
 const proceedToCheckout = () => {
   router.push('/checkout')
 }
 
-// Gọi lấy dữ liệu giỏ hàng mới nhất từ Database nếu đã đăng nhập
+// ĐÃ THÊM: Hàm xử lý áp dụng mã
+const handleApplyCoupon = async () => {
+  await cartStore.applyCouponCode(couponInput.value)
+}
+
 onMounted(() => {
   if (typeof cartStore.fetchDbCart === 'function') {
     cartStore.fetchDbCart()
@@ -98,22 +105,61 @@ onMounted(() => {
 
         <div class="lg:col-span-1">
           <div class="bg-gray-900 text-white rounded-[40px] p-8 sticky top-24 shadow-2xl shadow-gray-900/20">
-            <h3 class="text-xl font-black uppercase tracking-widest mb-8 border-b border-gray-800 pb-6">Tổng đơn hàng</h3>
+            <h3 class="text-xl font-black uppercase tracking-widest mb-6 border-b border-gray-800 pb-6">Tổng đơn hàng</h3>
             
+            <div class="mb-8 bg-gray-800/50 p-5 rounded-3xl border border-gray-700">
+              <div class="flex gap-2 mb-3">
+                <input
+                  v-model="couponInput"
+                  type="text"
+                  placeholder="Mã giảm giá"
+                  class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-green-500 uppercase placeholder:text-gray-500"
+                  :disabled="cartStore.appliedCoupon || cartStore.isApplyingCoupon"
+                />
+                <button
+                  v-if="!cartStore.appliedCoupon"
+                  @click="handleApplyCoupon"
+                  class="bg-gray-700 hover:bg-green-500 text-white px-5 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-colors disabled:opacity-50"
+                  :disabled="cartStore.isApplyingCoupon"
+                >
+                  <Loader2 v-if="cartStore.isApplyingCoupon" class="w-4 h-4 animate-spin" />
+                  <span v-else>Áp dụng</span>
+                </button>
+                <button
+                  v-else
+                  @click="cartStore.removeCoupon"
+                  class="bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white px-5 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-colors"
+                >
+                  Xóa
+                </button>
+              </div>
+              
+              <p v-if="cartStore.couponError" class="text-[11px] text-red-400 font-medium flex items-center gap-1">
+                <XCircle :size="12" /> {{ cartStore.couponError }}
+              </p>
+              <p v-if="cartStore.appliedCoupon" class="text-[11px] text-green-400 font-medium flex items-center gap-1">
+                <CheckCircle2 :size="12" /> Đã áp dụng: {{ cartStore.appliedCoupon.code || 'MÃ GIẢM GIÁ' }}
+              </p>
+            </div>
+
             <div class="space-y-4 mb-8">
               <div class="flex justify-between items-center text-gray-400">
                 <span class="text-sm font-medium">Tạm tính ({{ cartStore.totalItems }} sp)</span>
-                <span class="font-bold text-white">{{ formatPrice(cartStore.totalPrice) }}</span>
+                <span class="font-bold text-white">{{ formatPrice(cartStore.subTotal) }}</span>
               </div>
               <div class="flex justify-between items-center text-gray-400">
                 <span class="text-sm font-medium">Phí giao hàng</span>
                 <span class="font-bold text-green-400">Miễn phí</span>
               </div>
+              <div v-if="cartStore.discountAmount > 0" class="flex justify-between items-center text-green-400">
+                <span class="text-sm font-medium">Giảm giá</span>
+                <span class="font-bold">-{{ formatPrice(cartStore.discountAmount) }}</span>
+              </div>
             </div>
 
             <div class="border-t border-gray-800 pt-6 mb-8 flex justify-between items-end">
               <span class="text-xs font-black text-gray-400 uppercase tracking-widest">Tổng cộng</span>
-              <span class="text-3xl font-black text-green-400 leading-none">{{ formatPrice(cartStore.totalPrice) }}</span>
+              <span class="text-3xl font-black text-green-400 leading-none">{{ formatPrice(cartStore.finalTotal) }}</span>
             </div>
 
             <button 
@@ -132,7 +178,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Khóa và ẩn các mũi tên tăng giảm mặc định của input number */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none; 

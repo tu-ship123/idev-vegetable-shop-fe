@@ -2,34 +2,52 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { cartApi } from '@/api/cartApi'
+import { couponApi } from '@/api/couponApi' // Import thêm API mã giảm giá
 
 export const useCartStore = defineStore('cart', () => {
-  // State
+  // State cơ bản
   const items = ref(JSON.parse(localStorage.getItem('cart_items')) || [])
   const dbCartId = ref(null)
 
-  // Getters tính toán
-  const totalItems = computed(() => items.value.reduce((sum, item) => sum + item.quantity, 0))
-  const totalPrice = computed(() => items.value.reduce((sum, item) => sum + (item.product.price * item.quantity), 0))
+  // ================= THÊM STATE CHO MÃ GIẢM GIÁ =================
+  const appliedCoupon = ref(null)
+  const couponError = ref('')
+  const isApplyingCoupon = ref(false)
 
-  // ĐÃ SỬA: Đồng bộ tên biến 'access_token' khớp với auth.js
+  // ================= GETTERS TÍNH TIỀN REAL-TIME =================
+  const totalItems = computed(() => items.value.reduce((sum, item) => sum + item.quantity, 0))
+  
+  // Tạm tính (Giữ nguyên tên totalPrice để không hỏng code cũ của bạn)
+  const totalPrice = computed(() => items.value.reduce((sum, item) => sum + (item.product.price * item.quantity), 0))
+  const subTotal = computed(() => totalPrice.value)
+
+  // Tính số tiền được giảm
+  const discountAmount = computed(() => {
+    if (!appliedCoupon.value) return 0
+    if (appliedCoupon.value.discountType === 'PERCENT') {
+      return (subTotal.value * appliedCoupon.value.discountValue) / 100
+    }
+    return appliedCoupon.value.discountValue || 0
+  })
+
+  // Tổng tiền cuối cùng phải trả
+  const finalTotal = computed(() => {
+    const total = subTotal.value - discountAmount.value
+    return total > 0 ? total : 0
+  })
+
   const isLoggedIn = () => !!localStorage.getItem('access_token') || !!localStorage.getItem('token')
 
-  // Lấy giỏ hàng từ Database
   const fetchDbCart = async () => {
     if (!isLoggedIn()) return
     try {
       const res = await cartApi.getCart()
       const cartData = res.data || res
       dbCartId.value = cartData.id
-      
       items.value = (cartData.items || []).map(item => ({
         cartItemId: item.id, 
         product: {
-          id: item.productId,
-          name: item.productName,
-          price: item.productPrice,
-          image: item.productImageUrl
+          id: item.productId, name: item.productName, price: item.productPrice, image: item.productImageUrl
         },
         quantity: item.quantity
       }))
@@ -38,11 +56,10 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  // Thêm vào giỏ
   const addToCart = async (product, quantity = 1) => {
     if (isLoggedIn()) {
       await cartApi.addItem(product.id, quantity)
-      await fetchDbCart() // Refresh data từ BE
+      await fetchDbCart()
     } else {
       const existingItem = items.value.find(item => item.product.id === product.id)
       if (existingItem) existingItem.quantity += quantity
@@ -51,7 +68,6 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  // Xóa khỏi giỏ
   const removeFromCart = async (cartItemId, productId) => {
     if (isLoggedIn() && cartItemId) {
       await cartApi.removeItem(cartItemId)
@@ -62,7 +78,6 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  // Cập nhật số lượng
   const updateQuantity = async (cartItemId, productId, quantity) => {
     if (quantity < 1) return
     if (isLoggedIn() && cartItemId) {
@@ -75,14 +90,38 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  // ĐÃ THÊM: Hàm xóa trắng giỏ hàng sau khi thanh toán thành công
+  // ================= HÀM XỬ LÝ MÃ GIẢM GIÁ =================
+  const applyCouponCode = async (code) => {
+    if (!code) {
+      couponError.value = 'Vui lòng nhập mã giảm giá'
+      return false
+    }
+    isApplyingCoupon.value = true
+    couponError.value = ''
+    try {
+      const response = await couponApi.applyCoupon(code)
+      appliedCoupon.value = response.data || response
+      return true
+    } catch (error) {
+      appliedCoupon.value = null
+      couponError.value = error.response?.data?.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn'
+      return false
+    } finally {
+      isApplyingCoupon.value = false
+    }
+  }
+
+  const removeCoupon = () => {
+    appliedCoupon.value = null
+    couponError.value = ''
+  }
+
   const clearCart = () => {
     items.value = []
     localStorage.removeItem('cart_items')
-    // Không cần gọi API xóa DB vì Backend (OrderService) đã tự động dọn DB rồi
+    removeCoupon() // Xóa sạch mã giảm giá khi thanh toán xong
   }
 
-  // Đồng bộ giỏ hàng khi vừa đăng nhập
   const syncCartToDb = async () => {
     if (!isLoggedIn()) return
     try {
@@ -98,8 +137,9 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   return { 
-    items, totalItems, totalPrice, 
-    addToCart, removeFromCart, updateQuantity, fetchDbCart, syncCartToDb,
-    clearCart // Bắt buộc export hàm này ra cho CheckoutView gọi
+    items, totalItems, totalPrice, subTotal, discountAmount, finalTotal, // Các biến số liệu
+    appliedCoupon, couponError, isApplyingCoupon, // Các biến trạng thái Coupon
+    addToCart, removeFromCart, updateQuantity, fetchDbCart, syncCartToDb, clearCart,
+    applyCouponCode, removeCoupon // Hàm action
   }
 })
