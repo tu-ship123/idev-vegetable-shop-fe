@@ -8,20 +8,31 @@ import { productApi } from '@/api/productApi'
 import ProductCard from '@/components/ProductCard.vue'
 import { formatPrice } from '@/utils/formatters'
 import { useCartStore } from '@/stores/cart'
+import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const toastStore = useToastStore()
+const authStore = useAuthStore()
 const product = ref(null)
+
 const isLoading = ref(true)
 const activeTab = ref('description')
 const quantity = ref(1)
 
 const handleAddToCart = () => {
   if (!product.value) return
+  if (!authStore.isLoggedIn) {
+    toastStore.add('Vui lòng đăng nhập để thực hiện mua hàng!', 'warning')
+    router.push('/login')
+    return
+  }
   cartStore.addToCart(product.value, quantity.value)
-  alert(`Đã thêm ${quantity.value} ${product.value.name} vào giỏ hàng thành công!`)
+  toastStore.add(`Đã thêm ${quantity.value} ${product.value.name} vào giỏ hàng thành công!`, 'success')
 }
+
 
 const fetchProductDetail = async () => {
   isLoading.value = true

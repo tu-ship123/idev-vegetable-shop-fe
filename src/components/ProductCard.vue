@@ -3,6 +3,8 @@ import { ShoppingCart, Eye, Heart } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { formatPrice } from '@/utils/formatters'
 import { useCartStore } from '@/stores/cart' // Kéo giỏ hàng vào
+import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   product: {
@@ -13,6 +15,9 @@ const props = defineProps({
 
 const router = useRouter()
 const cartStore = useCartStore() // Khởi tạo store giỏ hàng
+const toastStore = useToastStore()
+const authStore = useAuthStore()
+
 
 const navigateToDetail = () => {
   if (props.product && props.product.id) {
@@ -22,9 +27,15 @@ const navigateToDetail = () => {
 
 // Hàm xử lý Mua ngay
 const handleBuyNow = () => {
+  if (!authStore.isLoggedIn) {
+    toastStore.add('Vui lòng đăng nhập để thực hiện mua hàng!', 'warning')
+    router.push('/login')
+    return
+  }
   cartStore.addToCart(props.product, 1)
-  alert(`Đã thêm ${props.product.name} vào giỏ hàng!`)
+  toastStore.add(`Đã thêm ${props.product.name} vào giỏ hàng!`, 'success')
 }
+
 </script>
 
 <template>

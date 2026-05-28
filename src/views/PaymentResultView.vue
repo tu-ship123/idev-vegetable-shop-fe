@@ -8,6 +8,7 @@ const route = useRoute()
 const router = useRouter()
 const status = ref('loading') // 'loading', 'success', 'error'
 const message = ref('Đang xác minh giao dịch...')
+const countdown = ref(5) // Định nghĩa countdown để không bị lỗi ReferenceError
 
 onMounted(async () => {
   // Lấy toàn bộ tham số URL mà VNPay ném về (ví dụ: ?vnp_Amount=...&vnp_BankCode=...)
@@ -18,6 +19,10 @@ onMounted(async () => {
     message.value = 'Không tìm thấy thông tin giao dịch.'
     return
   }
+
+  // Giấu các tham số thanh toán vnpay khỏi địa chỉ trình duyệt ngay lập tức
+  router.replace({ query: {} })
+
 
   try {
     // Gọi API Return của Backend để xác minh chữ ký bảo mật

@@ -112,9 +112,15 @@ onMounted(() => {
             <LogOut :size="16" /> Thoát
           </button>
         </div>
-        <button v-else @click="router.push('/login')" class="hidden lg:block text-[11px] font-bold uppercase tracking-widest hover:text-[#82ae46] border-l pl-5 border-gray-100">
-          Đăng nhập
-        </button>
+        <div v-else class="hidden lg:flex items-center gap-4 border-l pl-5 border-gray-100">
+          <button @click="router.push('/login')" class="text-[11px] font-bold uppercase tracking-widest hover:text-[#82ae46]">
+            Đăng nhập
+          </button>
+          <span class="text-gray-300">|</span>
+          <button @click="router.push('/login?tab=register')" class="text-[11px] font-bold uppercase tracking-widest hover:text-[#82ae46]">
+            Đăng ký
+          </button>
+        </div>
 
         <Menu :size="24" class="lg:hidden cursor-pointer hover:text-[#82ae46]" @click="isMobileMenuOpen = true" />
       </div>

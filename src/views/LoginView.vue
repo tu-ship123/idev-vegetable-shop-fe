@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import { Home, Leaf, ShieldCheck, Truck, Eye, EyeOff } from 'lucide-vue-next'
@@ -11,8 +11,9 @@ import bgAuth from '@/assets/images/bg_1.jpg'
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const router = useRouter()
+const route = useRoute()
 
-const activeTab = ref('login') 
+const activeTab = ref(route.query.tab === 'register' ? 'register' : 'login') 
 const isLoading = ref(false)
 
 const showLoginPwd = ref(false)
@@ -21,17 +22,25 @@ const showRegConfirmPwd = ref(false)
 
 // ĐÃ SỬA: Thêm trường phone vào Form Đăng ký
 const loginForm = ref({ email: '', password: '' })
-const loginErrors = ref({ email: '', password: '' })
+const loginErrors = ref({ email: '', password: '', general: '' })
 const regForm = ref({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
-const regErrors = ref({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
+const regErrors = ref({ name: '', email: '', phone: '', password: '', confirmPassword: '', general: '' })
 
 const handleLogin = async () => {
-  loginErrors.value = { email: '', password: '' }
-  if (!loginForm.value.email || !loginForm.value.password) {
-    if(!loginForm.value.email) loginErrors.value.email = 'Vui lòng nhập email'
-    if(!loginForm.value.password) loginErrors.value.password = 'Vui lòng nhập mật khẩu'
-    return
+  loginErrors.value = { email: '', password: '', general: '' }
+  let hasError = false
+  
+  if (!loginForm.value.email) {
+    loginErrors.value.email = 'Vui lòng nhập email'
+    hasError = true
   }
+  if (!loginForm.value.password) {
+    loginErrors.value.password = 'Vui lòng nhập mật khẩu'
+    hasError = true
+  }
+  
+  if (hasError) return
+
   isLoading.value = true
   try {
     const success = await authStore.login(loginForm.value)
@@ -39,15 +48,63 @@ const handleLogin = async () => {
       await cartStore.syncCartToDb() // Đồng bộ giỏ hàng offline lên DB
       router.push('/')
     }
+  } catch (error) {
+    console.error("Lỗi đăng nhập chi tiết:", error)
+    loginErrors.value.general = error.response?.data?.message || 'Email hoặc mật khẩu không chính xác.'
   } finally { isLoading.value = false }
 }
 
 const handleRegister = async () => {
-  regErrors.value = { name: '', email: '', phone: '', password: '', confirmPassword: '' }
-  if (regForm.value.password !== regForm.value.confirmPassword) {
-    regErrors.value.confirmPassword = 'Mật khẩu không khớp'
-    return
+  regErrors.value = { name: '', email: '', phone: '', password: '', confirmPassword: '', general: '' }
+  let hasError = false
+
+  if (!regForm.value.name.trim()) {
+    regErrors.value.name = 'Vui lòng nhập họ và tên'
+    hasError = true
   }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!regForm.value.email.trim()) {
+    regErrors.value.email = 'Vui lòng nhập email'
+    hasError = true
+  } else if (!emailRegex.test(regForm.value.email.trim())) {
+    regErrors.value.email = 'Email không đúng định dạng'
+    hasError = true
+  }
+
+  const phone = regForm.value.phone.trim()
+  if (!phone) {
+    regErrors.value.phone = 'Vui lòng nhập số điện thoại'
+    hasError = true
+  } else if (!phone.startsWith('0')) {
+    regErrors.value.phone = 'Số điện thoại phải bắt đầu bằng số 0'
+    hasError = true
+  } else if (!/^\d+$/.test(phone)) {
+    regErrors.value.phone = 'Số điện thoại chỉ được chứa ký số (không chứa chữ hoặc ký tự đặc biệt)'
+    hasError = true
+  } else if (phone.length < 10 || phone.length > 11) {
+    regErrors.value.phone = 'Số điện thoại phải gồm 10 hoặc 11 chữ số'
+    hasError = true
+  }
+
+  if (!regForm.value.password) {
+    regErrors.value.password = 'Vui lòng nhập mật khẩu'
+    hasError = true
+  } else if (regForm.value.password.length < 6) {
+    regErrors.value.password = 'Mật khẩu phải từ 6 ký tự trở lên'
+    hasError = true
+  }
+
+  if (!regForm.value.confirmPassword) {
+    regErrors.value.confirmPassword = 'Vui lòng xác nhận mật khẩu'
+    hasError = true
+  } else if (regForm.value.password !== regForm.value.confirmPassword) {
+    regErrors.value.confirmPassword = 'Mật khẩu xác nhận không khớp'
+    hasError = true
+  }
+
+  if (hasError) return
+
   isLoading.value = true
   try {
     // ĐÃ SỬA: Map trường phone vào phoneNumber để gửi xuống Backend
@@ -62,8 +119,12 @@ const handleRegister = async () => {
       // Đăng ký xong là có token rồi, cho bay thẳng về Trang chủ luôn!
       router.push('/') 
     }
+  } catch (error) {
+    console.error("Lỗi đăng ký chi tiết:", error)
+    regErrors.value.general = error.response?.data?.message || 'Đăng ký không thành công. Email hoặc số điện thoại có thể đã tồn tại.'
   } finally { isLoading.value = false }
 }
+
 </script>
 
 <template>
@@ -112,17 +173,19 @@ const handleRegister = async () => {
               </div>
             </div>
 
-            <BaseButton type="submit" variant="primary" class="w-full !py-3.5 !rounded-full shadow-lg mt-4 shadow-[#82ae46]/30 uppercase tracking-[0.2em] text-[11px] font-bold" :disabled="isLoading">
-              TẠO TÀI KHOẢN
-            </BaseButton>
+            <!-- BÁO LỖI TỔNG QUAN ĐĂNG KÝ -->
+            <p v-if="regErrors.general" class="text-xs text-red-500 italic text-center mt-2">{{ regErrors.general }}</p>
+
+            <div class="flex gap-4 mt-4">
+              <BaseButton type="submit" variant="primary" class="flex-1 !py-3.5 !rounded-full shadow-lg shadow-[#82ae46]/30 uppercase tracking-[0.2em] text-[11px] font-bold" :disabled="isLoading">
+                TẠO TÀI KHOẢN
+              </BaseButton>
+              <BaseButton type="button" @click="activeTab = 'login'" variant="outline" class="flex-1 !py-3.5 !rounded-full uppercase tracking-[0.2em] text-[12px] font-bold" :disabled="isLoading">
+                ĐĂNG NHẬP
+              </BaseButton>
+            </div>
 
             <div class="pt-6 text-center">
-              <p class="text-[11px] text-gray-500 tracking-wider">
-                Đã có tài khoản? 
-                <button type="button" @click="activeTab = 'login'" class="text-[#82ae46] font-bold hover:underline ml-1 uppercase">
-                  ĐĂNG NHẬP
-                </button>
-              </p>
               <button type="button" @click="router.push('/')" class="md:hidden mt-6 text-[10px] text-gray-400 font-bold hover:text-[#82ae46] uppercase tracking-[2px] flex items-center justify-center gap-1 mx-auto">
                 <Home :size="14" /> VỀ TRANG CHỦ
               </button>
@@ -156,17 +219,19 @@ const handleRegister = async () => {
               </div>
             </div>
 
-            <BaseButton type="submit" variant="primary" class="w-full !py-3.5 !rounded-full shadow-lg shadow-[#82ae46]/30 uppercase tracking-[0.2em] text-[11px] font-bold mt-2" :disabled="isLoading">
-              ĐĂNG NHẬP
-            </BaseButton>
+            <!-- BÁO LỖI TỔNG QUAN ĐĂNG NHẬP -->
+            <p v-if="loginErrors.general" class="text-xs text-red-500 italic text-center mt-2">{{ loginErrors.general }}</p>
+
+            <div class="flex gap-4 mt-2">
+              <BaseButton type="submit" variant="primary" class="flex-1 !py-3.5 !rounded-full shadow-lg shadow-[#82ae46]/30 uppercase tracking-[0.2em] text-[11px] font-bold" :disabled="isLoading">
+                ĐĂNG NHẬP
+              </BaseButton>
+              <BaseButton type="button" @click="activeTab = 'register'" variant="outline" class="flex-1 !py-3.5 !rounded-full uppercase tracking-[0.2em] text-[13px] font-black" :disabled="isLoading">
+                ĐĂNG KÝ
+              </BaseButton>
+            </div>
 
             <div class="pt-8 text-center mt-2">
-              <p class="text-[11px] text-gray-500 tracking-wider">
-                Chưa có tài khoản? 
-                <button type="button" @click="activeTab = 'register'" class="text-[#82ae46] font-bold hover:underline ml-1 uppercase">
-                  ĐĂNG KÝ NGAY
-                </button>
-              </p>
               <button type="button" @click="router.push('/')" class="md:hidden mt-6 text-[10px] text-gray-400 font-bold hover:text-[#82ae46] uppercase tracking-[2px] flex items-center justify-center gap-1 mx-auto">
                 <Home :size="14" /> VỀ TRANG CHỦ
               </button>

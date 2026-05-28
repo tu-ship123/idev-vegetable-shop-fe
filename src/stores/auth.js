@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { authApi } from '@/api/authApi'
+import { useCartStore } from './cart'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -68,7 +69,6 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // ĐÃ SỬA: Gọi API logout trước khi xóa LocalStorage
     async logout() {
       try {
         if (this.isLoggedIn) {
@@ -81,6 +81,10 @@ export const useAuthStore = defineStore('auth', {
         localStorage.removeItem('user_info');
         this.isLoggedIn = false;
         this.user = null;
+        
+        // Clear giỏ hàng khi đăng xuất
+        const cartStore = useCartStore();
+        cartStore.clearCart();
       }
     }
   }
