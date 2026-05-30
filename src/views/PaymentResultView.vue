@@ -10,18 +10,18 @@ const status = ref('loading') // 'loading', 'success', 'error'
 const message = ref('Đang xác minh giao dịch...')
 const countdown = ref(5) // Định nghĩa countdown để không bị lỗi ReferenceError
 
+// Lấy toàn bộ tham số URL mà VNPay ném về và GIẤU ngay lập tức khỏi thanh địa chỉ trình duyệt
+const queryString = window.location.search
+if (window.history.replaceState && queryString) {
+  window.history.replaceState(null, '', window.location.pathname)
+}
+
 onMounted(async () => {
-  // Lấy toàn bộ tham số URL mà VNPay ném về (ví dụ: ?vnp_Amount=...&vnp_BankCode=...)
-  const queryString = window.location.search
-  
   if (!queryString) {
     status.value = 'error'
     message.value = 'Không tìm thấy thông tin giao dịch.'
     return
   }
-
-  // Giấu các tham số thanh toán vnpay khỏi địa chỉ trình duyệt ngay lập tức
-  router.replace({ query: {} })
 
 
   try {
