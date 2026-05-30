@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth' // Import Pinia Auth Store
 import { useCartStore } from '@/stores/cart' // Import Pinia Cart Store
 
 const routes = [
+  // ================= 1. ROUTE DÀNH CHO KHÁCH (USER) =================
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
@@ -43,7 +44,6 @@ const routes = [
         component: () => import('@/views/ProductDetailView.vue'),
         meta: { title: 'Chi tiết sản phẩm | Cửa hàng Rau sạch', pageTitle: 'Chi tiết sản phẩm' }
       },
-      // ĐÃ THÊM: Route cho trang Lịch sử mua hàng
       {
         path: 'orders',
         name: 'orders',
@@ -52,6 +52,35 @@ const routes = [
       }
     ]
   },
+
+  // ================= 2. ROUTE DÀNH CHO ADMIN =================
+  {
+    path: '/admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }, // BẮT BUỘC PHẢI LÀ ADMIN
+    children: [
+      { 
+        path: '', 
+        name: 'admin-dashboard', 
+        component: () => import('@/views/admin/DashboardView.vue'),
+        meta: { title: 'Thống kê | Admin', pageTitle: 'Tổng quan hệ thống' } 
+      },
+      { 
+        path: 'products', 
+        name: 'admin-products', 
+        component: () => import('@/views/admin/ProductManageView.vue'),
+        meta: { title: 'Quản lý Sản phẩm | Admin', pageTitle: 'Quản lý Sản phẩm' } 
+      },
+      { 
+        path: 'orders', 
+        name: 'admin-orders', 
+        component: () => import('@/views/admin/OrderManageView.vue'),
+        meta: { title: 'Quản lý Đơn hàng | Admin', pageTitle: 'Quản lý Đơn hàng' } 
+      }
+    ]
+  },
+
+  // ================= 3. ROUTE CHUNG (AUTH & ERROR) =================
   {
     path: '/login',
     name: 'login',
@@ -77,25 +106,39 @@ const router = createRouter({
   routes
 })
 
+// ================= BỨC TƯỜNG LỬA (ROUTER GUARD) =================
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title || 'Vegetable Shop'
   
-  // SỬ DỤNG PINIA ĐỂ ĐỒNG BỘ TRẠNG THÁI ĐĂNG NHẬP
+  // Sử dụng Pinia để đồng bộ trạng thái đăng nhập
   const authStore = useAuthStore()
   const isAuthenticated = authStore.isLoggedIn
+  const isAdmin = authStore.user?.role === 'ADMIN' // Kiểm tra role của User
   
+  // 1. Chặn nếu trang yêu cầu đăng nhập mà khách chưa đăng nhập
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
-  } else if (to.name === 'checkout') {
+  } 
+  // 2. Chặn nếu trang yêu cầu quyền Admin mà tài khoản đang đăng nhập chỉ là User
+  else if (to.meta.requiresAdmin && !isAdmin) {
+    alert('Truy cập bị từ chối! Bạn không có quyền quản trị viên.')
+    next({ name: 'home' }) // Đá về trang chủ
+  }
+  // 3. Chặn không cho vào checkout khi giỏ hàng trống
+  else if (to.name === 'checkout') {
     const cartStore = useCartStore()
     if (cartStore.items.length === 0) {
-      next({ name: 'products' }) // Chặn không cho vào checkout khi giỏ hàng trống
+      next({ name: 'products' }) 
     } else {
       next()
     }
-  } else if ((to.name === 'login') && isAuthenticated) {
+  } 
+  // 4. Đã đăng nhập thì không cho vào trang Login nữa
+  else if ((to.name === 'login') && isAuthenticated) {
     next({ name: 'home' })
-  } else {
+  } 
+  // 5. Hợp lệ hết thì cho đi tiếp
+  else {
     next()
   }
 })
