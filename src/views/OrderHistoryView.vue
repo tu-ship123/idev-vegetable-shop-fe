@@ -43,7 +43,6 @@ const formatDate = (dateString) => {
   return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
-// Cấu hình màu sắc cho từng loại trạng thái đơn hàng
 const getStatusConfig = (status) => {
   const configs = {
     'PENDING': { color: 'text-yellow-600 bg-yellow-50 border-yellow-200', text: 'Chờ xử lý', icon: Clock },
@@ -67,7 +66,13 @@ const submitReview = async () => {
   
   isSubmittingReview.value = true
   try {
-    await orderApi.submitReview(selectedItem.value.productId, reviewForm.value)
+    // ĐÃ SỬA: Gộp thành 1 object truyền chuẩn xác xuống API
+    await orderApi.submitReview({
+      productId: selectedItem.value.productId,
+      rating: reviewForm.value.rating,
+      comment: reviewForm.value.comment
+    })
+    
     // Cập nhật state nội bộ để ẩn nút đánh giá
     selectedItem.value.isReviewed = true
     showReviewModal.value = false

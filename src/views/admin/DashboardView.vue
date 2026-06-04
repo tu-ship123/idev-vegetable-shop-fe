@@ -9,35 +9,35 @@ import { adminApi } from '@/api/adminApi'
 // Đăng ký các module biểu đồ
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend)
 
-// ================= DỮ LIỆU MẪU (MOCK DATA) =================
+// ================= STATE DỮ LIỆU TRỐNG (Chờ API) =================
 const stats = ref({
-  totalRevenue: 125600000,
-  totalOrders: 342,
-  totalUsers: 128,
-  totalProducts: 45
+  totalRevenue: 0,
+  totalOrders: 0,
+  totalUsers: 0,
+  totalProducts: 0
 })
 
 // Dữ liệu cho Biểu đồ Đường (Xu hướng doanh thu)
 const revenueChartData = ref({
-  labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
+  labels: [],
   datasets: [{
     label: 'Doanh thu (VNĐ)',
     backgroundColor: '#82ae46',
     borderColor: '#82ae46',
-    data: [15000000, 22000000, 18000000, 31000000, 25000000, 38000000],
-    tension: 0.4, // Làm cong đường nối
+    data: [],
+    tension: 0.4,
     fill: false
   }]
 })
 
 // Dữ liệu cho Biểu đồ Cột (Số lượng đơn hàng)
 const orderChartData = ref({
-  labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
+  labels: [],
   datasets: [{
     label: 'Số lượng đơn',
     backgroundColor: '#f59e0b',
     borderRadius: 6,
-    data: [45, 62, 55, 89, 70, 110]
+    data: []
   }]
 })
 
@@ -51,20 +51,27 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 }
 
-// ================= GỌI API (Đợi BE làm xong thì mở ra) =================
+// ================= GỌI API THẬT =================
 onMounted(async () => {
-  /*
   try {
+    // 1. Lấy 4 con số thống kê tổng
     const statRes = await adminApi.getDashboardStats()
-    stats.value = statRes.data
+    stats.value = statRes.data || statRes
 
+    // 2. Lấy mảng dữ liệu vẽ biểu đồ
     const chartRes = await adminApi.getChartData()
-    revenueChartData.value.datasets[0].data = chartRes.data.revenue
-    orderChartData.value.datasets[0].data = chartRes.data.orders
+    const data = chartRes.data || chartRes 
+    const { months, revenues, orderCounts } = data
+
+    // ĐÃ SỬA: Cập nhật nhãn và số liệu trực tiếp vào biến vẽ biểu đồ
+    revenueChartData.value.labels = months
+    orderChartData.value.labels = months
+    revenueChartData.value.datasets[0].data = revenues
+    orderChartData.value.datasets[0].data = orderCounts
+    
   } catch (error) {
     console.error('Lỗi tải dữ liệu Dashboard:', error)
   }
-  */
 })
 </script>
 

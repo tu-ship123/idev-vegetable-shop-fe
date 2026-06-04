@@ -20,7 +20,6 @@ const showLoginPwd = ref(false)
 const showRegPwd = ref(false)
 const showRegConfirmPwd = ref(false)
 
-// ĐÃ SỬA: Thêm trường phone vào Form Đăng ký
 const loginForm = ref({ email: '', password: '' })
 const loginErrors = ref({ email: '', password: '', general: '' })
 const regForm = ref({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
@@ -45,8 +44,19 @@ const handleLogin = async () => {
   try {
     const success = await authStore.login(loginForm.value)
     if (success) {
-      await cartStore.syncCartToDb() // Đồng bộ giỏ hàng offline lên DB
-      router.push('/')
+      await cartStore.syncCartToDb() 
+
+      // ================= ĐÃ SỬA CHỖ NÀY =================
+      // Lấy role của user từ authStore (kiểm tra các cấu trúc phổ biến)
+      const userRole = authStore.user?.role || authStore.user?.roles?.[0] || ''
+      
+      // Kiểm tra nếu là Admin thì chuyển thẳng vào Dashboard
+      if (userRole === 'ADMIN' || userRole === 'ROLE_ADMIN' || authStore.isAdmin) {
+        router.push('/admin') // Đổi thành route admin thực tế của bạn, ví dụ: /admin/dashboard
+      } else {
+        router.push('/') // User thường thì về trang chủ
+      }
+      // ===================================================
     }
   } catch (error) {
     console.error("Lỗi đăng nhập chi tiết:", error)
@@ -107,7 +117,6 @@ const handleRegister = async () => {
 
   isLoading.value = true
   try {
-    // ĐÃ SỬA: Map trường phone vào phoneNumber để gửi xuống Backend
     const success = await authStore.register({
       fullName: regForm.value.name,
       email: regForm.value.email,
@@ -115,8 +124,7 @@ const handleRegister = async () => {
       password: regForm.value.password
     })
     if (success) {
-      await cartStore.syncCartToDb() // Đồng bộ giỏ hàng offline lên DB
-      // Đăng ký xong là có token rồi, cho bay thẳng về Trang chủ luôn!
+      await cartStore.syncCartToDb()
       router.push('/') 
     }
   } catch (error) {
@@ -124,7 +132,6 @@ const handleRegister = async () => {
     regErrors.value.general = error.response?.data?.message || 'Đăng ký không thành công. Email hoặc số điện thoại có thể đã tồn tại.'
   } finally { isLoading.value = false }
 }
-
 </script>
 
 <template>
