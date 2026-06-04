@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { useRouter } from 'vue-router'
@@ -24,6 +24,32 @@ const otpCode = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 
+// Quản lý bộ đếm ngược OTP 5 phút
+const countdown = ref(0)
+let timerInterval = null
+
+const formatCountdown = computed(() => {
+  const minutes = Math.floor(countdown.value / 60)
+  const seconds = countdown.value % 60
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+})
+
+const startCountdown = () => {
+  countdown.value = 300 // 5 phút = 300 giây
+  if (timerInterval) clearInterval(timerInterval)
+  timerInterval = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--
+    } else {
+      clearInterval(timerInterval)
+    }
+  }, 1000)
+}
+
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval)
+})
+
 // Hàm xử lý Bước 1: Xin mã OTP
 const handleSendOTP = async () => {
   error.value = ''
@@ -39,6 +65,7 @@ const handleSendOTP = async () => {
   try {
     await authStore.forgotPassword({ email: email.value })
     step.value = 2 
+    startCountdown() // Bắt đầu đếm ngược 5 phút
   } catch (err) {
     console.error(err)
   } finally {
@@ -188,9 +215,17 @@ const handleResetPassword = async () => {
                 {{ isLoading ? 'ĐANG XỬ LÝ...' : 'ĐỔI MẬT KHẨU' }}
               </BaseButton>
               
-              <div class="pt-6 text-center">
-                <button type="button" @click="step = 1" class="text-[10px] text-gray-400 hover:text-[#82ae46] font-bold tracking-[0.15em] uppercase transition-colors">
+              <div class="pt-6 flex justify-between items-center text-[10px] font-bold tracking-[0.15em] uppercase">
+                <button type="button" @click="step = 1" class="text-gray-400 hover:text-[#82ae46] transition-colors">
                   SỬ DỤNG EMAIL KHÁC
+                </button>
+                <button 
+                  type="button" 
+                  @click="handleSendOTP" 
+                  :disabled="countdown > 0 || isLoading"
+                  class="transition-colors disabled:text-gray-400 text-[#82ae46] hover:text-[#719a3b] disabled:cursor-not-allowed"
+                >
+                  {{ countdown > 0 ? `GỬI LẠI MÃ (${formatCountdown})` : 'GỬI LẠI OTP' }}
                 </button>
               </div>
             </form>
