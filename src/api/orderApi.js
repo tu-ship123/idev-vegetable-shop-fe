@@ -2,28 +2,29 @@
 import axiosInstance from './apiClient'
 
 export const orderApi = {
-  // Gửi request đặt hàng (payload gồm shippingAddress, paymentMethod, note)
   checkout(data) {
     return axiosInstance.post('/orders/checkout', data)
   },
-
-  // ĐÃ THÊM: Lấy danh sách lịch sử đơn hàng của user đang đăng nhập
+  
   getMyOrders() {
-    return axiosInstance.get('/orders') 
+    return axiosInstance.get('/orders/my-orders') 
   },
 
-  // ĐÃ THÊM: Gửi đánh giá cho 1 sản phẩm
-  submitReview(productId, payload) {
-    return axiosInstance.post(`/products/${productId}/reviews`, payload)
-  }, // <--- THÊM DẤU PHẨY Ở ĐÂY NÀY!
+  // ĐÃ SỬA: Khớp với ReviewController của BE
+  submitReview(payload) {
+    // payload gồm { productId, rating, comment }
+    return axiosInstance.post('/reviews', payload)
+  },
 
-  // ĐÃ THÊM: Admin lấy TẤT CẢ đơn hàng hệ thống
+  // ĐÃ SỬA: Khớp với AdminController của BE
   getAllOrdersForAdmin() {
-    return axiosInstance.get('/orders/admin') 
+    return axiosInstance.get('/admin/orders') 
   },
 
-  // ĐÃ THÊM: Admin cập nhật trạng thái đơn (PENDING -> PROCESSING -> SHIPPED...)
+  // ĐÃ SỬA: Dùng PATCH và truyền Params theo đúng AdminController
   updateOrderStatus(orderId, status) {
-    return axiosInstance.put(`/orders/${orderId}/status`, { status })
+    return axiosInstance.patch(`/admin/orders/${orderId}/status`, null, { 
+      params: { status } 
+    })
   }
 }

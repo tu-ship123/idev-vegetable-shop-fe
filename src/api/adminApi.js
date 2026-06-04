@@ -2,13 +2,13 @@
 import axiosInstance from './apiClient'
 
 export const adminApi = {
-  // Lấy các chỉ số tổng quan (Tổng doanh thu, Số đơn, Số user...)
+  // ĐÃ SỬA: Khớp với đường dẫn trong AdminController
   getDashboardStats() {
-    return axiosInstance.get('/admin/stats')
+    return axiosInstance.get('/admin/dashboard/stats')
   },
   
-  // Lấy mảng dữ liệu để vẽ biểu đồ theo tháng
+  // API này BE chưa làm, cứ để tạm đây
   getChartData() {
-    return axiosInstance.get('/admin/charts')
+    return axiosInstance.get('/admin/dashboard/charts')
   }
 }
