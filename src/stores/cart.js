@@ -2,7 +2,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { cartApi } from '@/api/cartApi'
-import { couponApi } from '@/api/couponApi' // Import thêm API mã giảm giá
 
 export const useCartStore = defineStore('cart', () => {
   // State cơ bản
@@ -21,13 +20,15 @@ export const useCartStore = defineStore('cart', () => {
   const totalPrice = computed(() => items.value.reduce((sum, item) => sum + (item.product.price * item.quantity), 0))
   const subTotal = computed(() => totalPrice.value)
 
-  // Tính số tiền được giảm
+  // ĐÃ SỬA: Tính số tiền được giảm khớp với cấu trúc ApplyCouponResponse của Backend
   const discountAmount = computed(() => {
     if (!appliedCoupon.value) return 0
-    if (appliedCoupon.value.discountType === 'PERCENT') {
-      return (subTotal.value * appliedCoupon.value.discountValue) / 100
+    // Nếu BE trả về giảm theo phần trăm
+    if (appliedCoupon.value.discountPercentage && appliedCoupon.value.discountPercentage > 0) {
+      return (subTotal.value * appliedCoupon.value.discountPercentage) / 100
     }
-    return appliedCoupon.value.discountValue || 0
+    // Nếu BE trả về giảm số tiền cố định
+    return appliedCoupon.value.discountAmount || 0
   })
 
   // Tổng tiền cuối cùng phải trả
@@ -99,12 +100,13 @@ export const useCartStore = defineStore('cart', () => {
     isApplyingCoupon.value = true
     couponError.value = ''
     try {
-      const response = await couponApi.applyCoupon(code)
+      // ĐÃ SỬA: Gọi từ cartApi và truyền thêm tổng tiền (subTotal.value)
+      const response = await cartApi.applyCoupon(code, subTotal.value)
       appliedCoupon.value = response.data || response
       return true
     } catch (error) {
       appliedCoupon.value = null
-      couponError.value = error.response?.data?.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn'
+      couponError.value = error.response?.data?.message || 'Mã giảm giá không hợp lệ hoặc chưa đạt điều kiện'
       return false
     } finally {
       isApplyingCoupon.value = false

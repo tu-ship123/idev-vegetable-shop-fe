@@ -11,11 +11,18 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173, // Cố định cổng chạy của Vue
+    port: 5173, 
     proxy: {
       '/api': {
         target: 'http://localhost:8080', 
-        changeOrigin: true, // Quan trọng: Đánh lừa CORS
+        changeOrigin: true,
+        // THÊM ĐOẠN CONFIGURE NÀY ĐỂ CAN THIỆP SÂU VÀO REQUEST
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            // Xóa header Origin để lừa Spring Boot đây là request nội bộ
+            proxyReq.removeHeader('Origin')
+          })
+        }
       }
     }
   }

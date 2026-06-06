@@ -1,11 +1,29 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue' // ĐÃ SỬA: Import thêm computed
 import { Plus, Edit2, Trash2, Eye, Search, Loader2, X } from 'lucide-vue-next'
 import axiosInstance from '@/api/apiClient'
 
 const products = ref([])
 const isLoading = ref(true)
 const searchQuery = ref('')
+
+// ================= LỌC SẢN PHẨM (TÌM KIẾM) =================
+const filteredProducts = computed(() => {
+  // Nếu ô tìm kiếm trống, trả về toàn bộ danh sách
+  if (!searchQuery.value.trim()) {
+    return products.value
+  }
+  
+  // Chuyển từ khóa về chữ thường để tìm kiếm không phân biệt hoa thường
+  const lowerCaseQuery = searchQuery.value.trim().toLowerCase()
+  
+  // Lọc sản phẩm theo Tên, ID hoặc Tên danh mục
+  return products.value.filter(product => 
+    (product.name && product.name.toLowerCase().includes(lowerCaseQuery)) ||
+    (product.id && product.id.toString().includes(lowerCaseQuery)) ||
+    (product.categoryName && product.categoryName.toLowerCase().includes(lowerCaseQuery))
+  )
+})
 
 // ================= STATE CHO MODAL THÊM/SỬA =================
 const showModal = ref(false)
@@ -125,7 +143,6 @@ onMounted(() => {
 <template>
   <div class="space-y-8 relative">
     
-    <!-- HEADER -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
       <div class="relative flex-1 w-full max-w-md">
         <input 
@@ -142,7 +159,6 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- BẢNG SẢN PHẨM -->
     <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden relative min-h-[300px]">
       
       <div v-if="isLoading" class="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
@@ -163,10 +179,10 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 text-sm font-medium text-gray-700">
-            <tr v-if="products.length === 0 && !isLoading">
+            <tr v-if="filteredProducts.length === 0 && !isLoading">
               <td colspan="7" class="py-12 text-center text-gray-400">Không có sản phẩm nào.</td>
             </tr>
-            <tr v-for="product in products" :key="product.id" class="hover:bg-gray-50/50 transition-colors">
+            <tr v-for="product in filteredProducts" :key="product.id" class="hover:bg-gray-50/50 transition-colors">
               <td class="py-4 px-6 text-center">
                 <div class="w-12 h-12 bg-gray-50 rounded-xl border p-1 mx-auto flex items-center justify-center overflow-hidden">
                   <img :src="product.imageUrl || 'https://placehold.co/150x150/f9fafb/a1a1aa?text=No+Image'" @error="handleImageError" class="w-full h-full object-contain" />
@@ -211,7 +227,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- ================= MODAL THÊM / SỬA ================= -->
     <div v-if="showModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div class="bg-white w-full max-w-2xl rounded-[30px] p-8 relative">
         <button @click="showModal = false" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 transition-colors">
@@ -224,13 +239,11 @@ onMounted(() => {
 
         <form @submit.prevent="saveProduct" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Tên sản phẩm -->
             <div class="md:col-span-2">
               <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Tên sản phẩm</label>
               <input v-model="productForm.name" required type="text" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#82ae46]" placeholder="Vd: Táo Mỹ..." />
             </div>
 
-            <!-- Giá & Số lượng -->
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Giá bán (VNĐ)</label>
               <input v-model.number="productForm.price" required type="number" min="0" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#82ae46]" />
@@ -240,7 +253,6 @@ onMounted(() => {
               <input v-model.number="productForm.stockQty" required type="number" min="0" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#82ae46]" />
             </div>
 
-            <!-- Đơn vị & ID Danh mục -->
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Đơn vị (Kg, Hộp...)</label>
               <input v-model="productForm.unit" required type="text" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#82ae46]" />
@@ -250,14 +262,12 @@ onMounted(() => {
               <input v-model.number="productForm.categoryId" required type="number" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#82ae46]" placeholder="1, 2, 3..." />
             </div>
 
-            <!-- Link Ảnh -->
             <div class="md:col-span-2">
               <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Link Ảnh (URL)</label>
               <input v-model="productForm.imageUrl" type="url" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#82ae46]" placeholder="https://..." />
             </div>
           </div>
 
-          <!-- Trạng thái -->
           <div class="pt-2 flex items-center gap-3">
             <input v-model="productForm.isActive" type="checkbox" id="isActive" class="w-5 h-5 text-[#82ae46] border-gray-300 rounded focus:ring-[#82ae46]" />
             <label for="isActive" class="text-sm font-bold text-gray-700 cursor-pointer">Đang kinh doanh (Hiển thị cho khách hàng)</label>

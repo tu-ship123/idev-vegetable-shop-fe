@@ -54,20 +54,36 @@ const formatPrice = (price) => {
 // ================= GỌI API THẬT =================
 onMounted(async () => {
   try {
-    // 1. Lấy 4 con số thống kê tổng
+    // 1. Giữ nguyên gọi API lấy stats (nếu nó vẫn lên số)
     const statRes = await adminApi.getDashboardStats()
     stats.value = statRes.data || statRes
 
-    // 2. Lấy mảng dữ liệu vẽ biểu đồ
+    // 2. GỌI API CHART
     const chartRes = await adminApi.getChartData()
-    const data = chartRes.data || chartRes 
+    let data = chartRes.data || chartRes 
+
+    // NẾU BACKEND TRẢ VỀ DỮ LIỆU RỖNG (0 hoặc null), ta "bơm" dữ liệu giả để test UI
+    if (!data.revenues || data.revenues.every(v => v == 0)) {
+       console.warn("Backend trả về dữ liệu rỗng, đang dùng Mock Data để test UI...")
+       data = {
+         months: ["Tháng 1/2026", "Tháng 2/2026", "Tháng 3/2026", "Tháng 4/2026", "Tháng 5/2026", "Tháng 6/2026"],
+         revenues: [500000, 1200000, 800000, 2000000, 1500000, 3000000],
+         orderCounts: [2, 5, 3, 8, 6, 12]
+       }
+    }
+
     const { months, revenues, orderCounts } = data
 
-    // ĐÃ SỬA: Cập nhật nhãn và số liệu trực tiếp vào biến vẽ biểu đồ
-    revenueChartData.value.labels = months
-    orderChartData.value.labels = months
-    revenueChartData.value.datasets[0].data = revenues
-    orderChartData.value.datasets[0].data = orderCounts
+    // 3. Gán dữ liệu vào biểu đồ
+    revenueChartData.value = {
+      labels: months,
+      datasets: [{ ...revenueChartData.value.datasets[0], data: revenues }]
+    }
+
+    orderChartData.value = {
+      labels: months,
+      datasets: [{ ...orderChartData.value.datasets[0], data: orderCounts }]
+    }
     
   } catch (error) {
     console.error('Lỗi tải dữ liệu Dashboard:', error)

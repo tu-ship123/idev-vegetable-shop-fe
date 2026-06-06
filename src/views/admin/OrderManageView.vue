@@ -1,21 +1,43 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue' // ĐÃ THÊM: computed
 import { orderApi } from '@/api/orderApi'
-import { Clock, Package, CheckCircle2, XCircle, FileText, Search } from 'lucide-vue-next'
+import { Clock, Package, CheckCircle2, XCircle, FileText, Search, Loader2 } from 'lucide-vue-next'
 
-const orders = ref([
-  // Data mẫu khi chưa kết nối API, khi chạy thật sẽ bị đè bởi dữ liệu BE
-  { id: 1, userFullName: 'Nguyễn Văn B', createdAt: '2026-05-30T09:00:00', totalAmount: 245000, paymentMethod: 'VNPAY', paymentStatus: 'PAID', status: 'PENDING' },
-  { id: 2, userFullName: 'Trần Thị C', createdAt: '2026-05-29T14:30:00', totalAmount: 115000, paymentMethod: 'COD', paymentStatus: 'UNPAID', status: 'PROCESSING' }
-])
-const isLoading = ref(false)
+const orders = ref([])
+const isLoading = ref(true)
 const searchQuery = ref('')
 
+// ================= LỌC ĐƠN HÀNG (TÌM KIẾM) =================
+const filteredOrders = computed(() => {
+  if (!searchQuery.value.trim()) return orders.value
+  
+  const query = searchQuery.value.trim().toLowerCase()
+  return orders.value.filter(order => 
+    order.id.toString().includes(query) ||
+    (order.userFullName && order.userFullName.toLowerCase().includes(query)) ||
+    (order.paymentMethod && order.paymentMethod.toLowerCase().includes(query))
+  )
+})
+
+// ================= GỌI API LẤY DANH SÁCH =================
 const fetchAllOrders = async () => {
   isLoading.value = true
   try {
     const res = await orderApi.getAllOrdersForAdmin()
-    orders.value = res.data || res
+    
+    // Xử lý bóc tách vỏ bọc dữ liệu chuẩn như bên Sản phẩm
+    let finalData = res.data !== undefined ? res.data : res
+    if (finalData && finalData.data) {
+      finalData = finalData.data
+    }
+    
+    // Gán dữ liệu nếu đúng là mảng
+    if (Array.isArray(finalData)) {
+      orders.value = finalData
+    } else {
+      console.warn("Dữ liệu đơn hàng không phải mảng:", finalData)
+      orders.value = []
+    }
   } catch (error) {
     console.error('Lỗi lấy danh sách đơn hàng hệ thống:', error)
   } finally {
@@ -23,15 +45,20 @@ const fetchAllOrders = async () => {
   }
 }
 
-// Hàm gọi API đổi trạng thái đơn hàng trực tiếp xuống DB
+// ================= GỌI API ĐỔI TRẠNG THÁI =================
 const handleStatusChange = async (orderId, newStatus) => {
   try {
     await orderApi.updateOrderStatus(orderId, newStatus)
-    // Cập nhật cục bộ mảng orders để UI đổi màu nhãn lập tức mà không cần reload trang
+    
+    // Cập nhật cục bộ mảng orders để UI đổi màu nhãn lập tức
     const order = orders.value.find(o => o.id === orderId)
-    if (order) order.status = newStatus
+    if (order) {
+      order.status = newStatus
+      alert(`Đã cập nhật đơn hàng #${orderId} thành công!`)
+    }
   } catch (error) {
-    alert('Không thể cập nhật trạng thái đơn hàng!')
+    console.error(error)
+    alert('Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại!')
   }
 }
 
@@ -39,6 +66,7 @@ onMounted(() => {
   fetchAllOrders()
 })
 
+// ================= TIỆN ÍCH =================
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 }
@@ -68,13 +96,18 @@ const getStatusBadgeClass = (status) => {
           v-model="searchQuery"
           type="text" 
           placeholder="Tìm kiếm mã đơn, tên khách hàng..."
-          class="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm focus:outline-none focus:border-[#82ae46]"
+          class="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm focus:outline-none focus:border-[#82ae46] focus:ring-1 focus:ring-[#82ae46]"
         />
         <Search class="absolute left-4 top-4 text-gray-400 w-5 h-5" />
       </div>
     </div>
 
-    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden relative min-h-[300px]">
+      
+      <div v-if="isLoading" class="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
+        <Loader2 class="w-8 h-8 text-[#82ae46] animate-spin" />
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -88,7 +121,11 @@ const getStatusBadgeClass = (status) => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 text-sm font-medium text-gray-700">
-            <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50/50 transition-colors">
+            <tr v-if="filteredOrders.length === 0 && !isLoading">
+              <td colspan="6" class="py-12 text-center text-gray-400">Không tìm thấy đơn hàng nào.</td>
+            </tr>
+            
+            <tr v-for="order in filteredOrders" :key="order.id" class="hover:bg-gray-50/50 transition-colors">
               <td class="py-4 px-6 text-center font-black text-gray-900 uppercase">
                 #{{ order.id }}
               </td>
@@ -111,12 +148,11 @@ const getStatusBadgeClass = (status) => {
                 <select 
                   :value="order.status"
                   @change="handleStatusChange(order.id, $event.target.value)"
-                  class="text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl outline-none border cursor-pointer transition-colors"
+                  class="..."
                   :class="getStatusBadgeClass(order.status)"
                 >
                   <option value="PENDING">Chờ xử lý</option>
-                  <option value="PROCESSING">Đang chuẩn bị</option>
-                  <option value="SHIPPED">Đang giao hàng</option>
+                  <option value="SHIPPING">Đang giao hàng</option> 
                   <option value="DELIVERED">Đã giao hàng</option>
                   <option value="CANCELLED">Đã hủy đơn</option>
                 </select>
