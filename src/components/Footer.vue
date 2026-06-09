@@ -6,7 +6,7 @@ import { Twitter, Facebook, Instagram } from 'lucide-vue-next'
   <footer class="bg-white pt-20 pb-10 border-t border-gray-100" style="font-family: 'Poppins', sans-serif;">
     <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
       <div>
-        <h4 class="text-gray-900 font-bold mb-8 uppercase tracking-widest text-sm">Vegefoods</h4>
+        <h4 class="text-gray-900 font-bold mb-8 uppercase tracking-widest text-sm">Vegetable Shop</h4>
         <p class="text-gray-500 text-[14px] leading-relaxed">Nông sản sạch hữu cơ mang đến sức khỏe vàng cho gia đình bạn.</p>
         <div class="flex gap-4 mt-6">
           <Facebook :size="18" class="text-gray-400 hover:text-[#82ae46] cursor-pointer" />

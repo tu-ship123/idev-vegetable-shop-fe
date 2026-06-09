@@ -76,6 +76,20 @@ const routes = [
         name: 'admin-orders', 
         component: () => import('@/views/admin/OrderManageView.vue'),
         meta: { title: 'Quản lý Đơn hàng | Admin', pageTitle: 'Quản lý Đơn hàng' } 
+      },
+      // ĐÃ THÊM: Route quản lý danh mục
+      {
+        path: 'categories',
+        name: 'admin-categories',
+        component: () => import('@/views/admin/CategoryManageView.vue'),
+        meta: { title: 'Quản lý Danh mục | Admin', pageTitle: 'Quản lý Danh mục' }
+      },
+      // ĐÃ THÊM: Route quản lý mã giảm giá
+      {
+        path: 'coupons',
+        name: 'admin-coupons',
+        component: () => import('@/views/admin/CouponManageView.vue'),
+        meta: { title: 'Quản lý Mã giảm giá | Admin', pageTitle: 'Quản lý Mã giảm giá' }
       }
     ]
   },

@@ -22,5 +22,9 @@ export const orderApi = {
     return axiosInstance.patch(`/admin/orders/${orderId}/status`, null, { 
       params: { status } 
     })
+  },
+
+  checkVnpayTransaction(orderId) {
+    return axiosInstance.get(`/admin/payments/transactions/order/${orderId}`)
   }
 }

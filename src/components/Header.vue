@@ -65,7 +65,7 @@ onMounted(() => {
   <header class="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-50" style="font-family: 'Poppins', sans-serif;">
     <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
       <router-link to="/" class="text-[#82ae46] text-4xl font-bold uppercase tracking-tighter" style="font-family: 'Amatic SC', cursive;">
-        Vegefoods
+        Vegetable Shop
       </router-link>
 
       <nav class="hidden lg:flex items-center gap-8 text-[13px] font-medium uppercase tracking-[2px]">

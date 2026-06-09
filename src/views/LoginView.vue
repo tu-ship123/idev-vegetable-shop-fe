@@ -261,7 +261,7 @@ const handleRegister = async () => {
             <Leaf :size="32" class="text-white" />
           </div>
 
-          <h1 class="text-6xl font-bold tracking-widest uppercase mb-4" style="font-family: 'Amatic SC', cursive;">Vegefoods</h1>
+          <h1 class="text-6xl font-bold tracking-widest uppercase mb-4" style="font-family: 'Amatic SC', cursive;">Vegetable Shop</h1>
           
           <p class="text-[14px] font-light leading-relaxed max-w-[260px] opacity-90 mb-10" style="font-family: 'Poppins', sans-serif;">
             Mang cả nông trại tươi sạch <br>đến tận bàn ăn gia đình bạn.
