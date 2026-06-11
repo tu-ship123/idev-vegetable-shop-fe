@@ -1,45 +1,48 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { paymentApi } from '@/api/paymentApi'
+import axiosInstance from '@/api/apiClient' // Dùng axiosInstance thay vì paymentApi để gọi thẳng
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
 const status = ref('loading') // 'loading', 'success', 'error'
 const message = ref('Đang xác minh giao dịch...')
-const countdown = ref(5) // Định nghĩa countdown để không bị lỗi ReferenceError
-
-// Lấy toàn bộ tham số URL mà VNPay ném về và GIẤU ngay lập tức khỏi thanh địa chỉ trình duyệt
-const queryString = window.location.search
-if (window.history.replaceState && queryString) {
-  window.history.replaceState(null, '', window.location.pathname)
-}
+const countdown = ref(5)
 
 onMounted(async () => {
-  if (!queryString) {
+  // Lấy params an toàn bằng Vue Router thay vì window.location.search
+  const vnpayParams = route.query
+
+  if (Object.keys(vnpayParams).length === 0) {
     status.value = 'error'
     message.value = 'Không tìm thấy thông tin giao dịch.'
     return
   }
 
+  // Lấy dữ liệu xong thì mới giấu URL trên trình duyệt cho đẹp
+  if (window.history.replaceState) {
+    window.history.replaceState(null, '', window.location.pathname)
+  }
 
   try {
-    // Gọi API Return của Backend để xác minh chữ ký bảo mật
-    const res = await paymentApi.verifyReturn(queryString)
+    // Gọi API Return của Backend (/api/v1/payments/vnpay/return)
+    const res = await axiosInstance.get('/payments/vnpay/return', {
+      params: vnpayParams
+    })
+    
     const data = res.data || res
     
-    // ĐÃ SỬA: Bắt chuẩn biến 'success' (true/false) từ Backend trả về
+    // Bắt chuẩn biến 'success' từ VNPayReturnResponse của Backend
     if (data.success === true) {
       status.value = 'success'
-      // Tận dụng luôn câu message cực chuẩn từ Backend
       message.value = data.message || 'Thanh toán thành công! Cảm ơn bạn đã mua hàng.'
       
       const timer = setInterval(() => {
         countdown.value--
         if (countdown.value <= 0) {
           clearInterval(timer)
-          router.push('/') 
+          router.push('/orders') // Chuyển về trang Lịch sử đơn hàng
         }
       }, 1000)
 
@@ -48,8 +51,9 @@ onMounted(async () => {
       message.value = data.message || 'Giao dịch bị hủy hoặc thanh toán thất bại.'
     }
   } catch (error) {
+    console.error('Lỗi xác minh VNPAY:', error)
     status.value = 'error'
-    message.value = 'Có lỗi xảy ra khi xác minh giao dịch với máy chủ.'
+    message.value = 'Có lỗi xảy ra khi kết nối với máy chủ.'
   }
 })
 </script>
@@ -69,9 +73,9 @@ onMounted(async () => {
           <CheckCircle2 :size="48" />
         </div>
         <h2 class="text-3xl font-black text-gray-900 mb-4 uppercase tracking-widest">Thành công!</h2>
-        <p class="text-gray-500 mb-8">{{ message }}</p>
-        <button @click="router.push('/')" class="w-full bg-gray-900 text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-colors">
-          Về trang chủ
+        <p class="text-gray-500 mb-8">{{ message }}<br/><span class="text-sm font-bold text-green-600 mt-2 block">Tự động chuyển trang sau {{ countdown }}s...</span></p>
+        <button @click="router.push('/orders')" class="w-full bg-gray-900 text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-colors">
+          Xem đơn hàng
         </button>
       </div>
 
