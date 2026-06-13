@@ -42,15 +42,18 @@ export const setupInterceptors = (apiClient) => {
             toastStore.add(data.message || 'Dữ liệu không hợp lệ hoặc tài khoản đã tồn tại!', 'error');
             break;
           case 401:
-            console.error('Lỗi 401 (Unauthorized) - Token hết hạn hoặc sai mật khẩu.');
-            
-            const authStore = useAuthStore();
-            authStore.logout(); 
+            console.error('Lỗi 401 (Unauthorized) - Token hết hạn hoặc sai mật khẩu.')
 
-            // Chỉ buộc chuyển về trang đăng nhập nếu trang hiện tại yêu cầu quyền truy cập (như Checkout)
-            if (router.currentRoute.value?.meta?.requiresAuth) {
-              toastStore.add('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.', 'error');
-              router.push('/login');
+            // Chỉ logout khi KHÔNG phải endpoint auth (login/register sai mật khẩu cũng trả 401)
+            const isAuthEndpoint = error.config?.url?.includes('/auth/')
+            if (!isAuthEndpoint) {
+              const authStore = useAuthStore()
+              authStore.logout()
+
+              if (router.currentRoute.value?.meta?.requiresAuth) {
+                toastStore.add('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.', 'error')
+                router.push('/login')
+              }
             }
             break;
 
@@ -82,4 +85,4 @@ export const setupInterceptors = (apiClient) => {
       return Promise.reject(error);
     }
   );
-};
+};

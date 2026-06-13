@@ -3,6 +3,15 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { cartApi } from '@/api/cartApi'
 
+const parseStorage = (key, fallback = null) => {
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback
+  } catch {
+    localStorage.removeItem(key)
+    return fallback
+  }
+}
+
 export const useCartStore = defineStore('cart', () => {
   // State cơ bản
   const items = ref(JSON.parse(localStorage.getItem('cart_items')) || [])
@@ -124,19 +133,27 @@ export const useCartStore = defineStore('cart', () => {
     removeCoupon() // Xóa sạch mã giảm giá khi thanh toán xong
   }
 
-  const syncCartToDb = async () => {
-    if (!isLoggedIn()) return
-    try {
-      const localItems = JSON.parse(localStorage.getItem('cart_items')) || []
-      for (const item of localItems) {
-        await cartApi.addItem(item.product.id, item.quantity)
-      }
-      localStorage.removeItem('cart_items') 
-      await fetchDbCart()
-    } catch (error) {
-      console.error('Lỗi đồng bộ giỏ hàng:', error)
-    }
+  // ✅ SAU
+const syncCartToDb = async () => {
+  if (!isLoggedIn()) return
+  const localItems = parseStorage('cart_items', [])
+  if (localItems.length === 0) return
+
+  // Promise.allSettled: chạy song song, item nào lỗi không ảnh hưởng item khác
+  const results = await Promise.allSettled(
+    localItems.map(item => cartApi.addItem(item.product.id, item.quantity))
+  )
+
+  // Log những item sync thất bại để debug (không throw, không chặn luồng)
+  const failed = results.filter(r => r.status === 'rejected')
+  if (failed.length > 0) {
+    console.warn(`Có ${failed.length} sản phẩm không sync được vào DB:`, failed)
   }
+
+  // Chỉ xoá localStorage SAU KHI đã gửi hết request (dù thành công hay thất bại)
+  localStorage.removeItem('cart_items')
+  await fetchDbCart()
+}
 
   return { 
     items, totalItems, totalPrice, subTotal, discountAmount, finalTotal, // Các biến số liệu

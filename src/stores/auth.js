@@ -2,10 +2,19 @@ import { defineStore } from 'pinia'
 import { authApi } from '@/api/authApi'
 import { useCartStore } from './cart'
 
+const parseStorage = (key, fallback = null) => {
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback
+  } catch {
+    localStorage.removeItem(key) // Xoá luôn giá trị bị hỏng
+    return fallback
+  }
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     isLoggedIn: !!localStorage.getItem('access_token'),
-    user: JSON.parse(localStorage.getItem('user_info')) || null,
+    user: parseStorage('user_info', null),
   }),
   actions: {
     async login(credentials) {

@@ -1,8 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { orderApi } from '@/api/orderApi'
+import axiosInstance from '@/api/apiClient' // Dùng axiosInstance để gọi thẳng API Reviews
+import { useToast } from 'vue-toastification' // Thêm Toast xịn xò
 import { Package, Clock, CheckCircle2, XCircle, Star, X, Loader2 } from 'lucide-vue-next'
 
+const toast = useToast()
 const orders = ref([])
 const isLoading = ref(true)
 
@@ -20,9 +23,11 @@ const fetchMyOrders = async () => {
   isLoading.value = true
   try {
     const res = await orderApi.getMyOrders()
-    orders.value = res.data || res
+    let data = res.data || res
+    orders.value = Array.isArray(data) ? data : []
   } catch (error) {
     console.error('Lỗi khi lấy lịch sử đơn hàng:', error)
+    toast.error('Không thể tải lịch sử đơn hàng!')
   } finally {
     isLoading.value = false
   }
@@ -62,13 +67,16 @@ const openReviewModal = (item) => {
 }
 
 const submitReview = async () => {
-  if (!reviewForm.value.comment.trim()) return
+  if (!reviewForm.value.comment.trim()) {
+    toast.warning('Vui lòng nhập nội dung đánh giá!')
+    return
+  }
   
   isSubmittingReview.value = true
   try {
-    // ĐÃ SỬA: Gộp thành 1 object truyền chuẩn xác xuống API
-    await orderApi.submitReview({
-      productId: selectedItem.value.productId,
+    // Gọi chuẩn xác vào API theo ReviewController.java
+    await axiosInstance.post('/reviews', {
+      productId: selectedItem.value.productId, // Bắt buộc phải có theo ReviewRequest
       rating: reviewForm.value.rating,
       comment: reviewForm.value.comment
     })
@@ -76,8 +84,10 @@ const submitReview = async () => {
     // Cập nhật state nội bộ để ẩn nút đánh giá
     selectedItem.value.isReviewed = true
     showReviewModal.value = false
+    toast.success('Cảm ơn bạn đã đánh giá sản phẩm!')
   } catch (error) {
-    alert('Có lỗi xảy ra khi gửi đánh giá')
+    console.error('Lỗi khi gửi đánh giá:', error)
+    toast.error('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại!')
   } finally {
     isSubmittingReview.value = false
   }
@@ -93,12 +103,10 @@ const submitReview = async () => {
         <p class="text-sm font-medium text-gray-500 mt-2">Theo dõi và đánh giá các sản phẩm bạn đã mua</p>
       </div>
 
-      <!-- Trạng thái Loading -->
       <div v-if="isLoading" class="flex justify-center py-20">
         <Loader2 class="w-10 h-10 animate-spin text-green-500" />
       </div>
 
-      <!-- Trạng thái Chưa có đơn hàng -->
       <div v-else-if="orders.length === 0" class="bg-white p-16 rounded-[40px] text-center border border-gray-100 shadow-sm">
         <Package class="w-20 h-20 text-gray-200 mx-auto mb-6" />
         <h3 class="text-2xl font-black text-gray-900 mb-2">Chưa có đơn hàng nào</h3>
@@ -108,11 +116,9 @@ const submitReview = async () => {
         </router-link>
       </div>
 
-      <!-- Danh sách đơn hàng -->
       <div v-else class="space-y-8">
         <div v-for="order in orders" :key="order.id" class="bg-white p-8 rounded-[30px] border border-gray-100 shadow-sm transition-hover hover:shadow-md">
           
-          <!-- Header đơn hàng -->
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-gray-100 gap-4">
             <div>
               <p class="text-sm text-gray-500 font-medium">Đơn hàng <span class="text-gray-900 font-bold uppercase">#{{ order.id }}</span></p>
@@ -125,12 +131,11 @@ const submitReview = async () => {
             </div>
           </div>
 
-          <!-- Danh sách sản phẩm trong đơn -->
           <div class="py-6 space-y-6">
             <div v-for="item in order.items" :key="item.id" class="flex items-center justify-between">
               <div class="flex items-center gap-4">
                 <div class="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center p-2 border border-gray-100">
-                  <img :src="item.productImageUrl || 'https://via.placeholder.com/150'" class="w-full h-full object-contain" />
+                  <img :src="item.productImageUrl || 'https://placehold.co/150'" class="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h4 class="font-bold text-gray-900 line-clamp-1">{{ item.productName || 'Sản phẩm' }}</h4>
@@ -138,7 +143,6 @@ const submitReview = async () => {
                 </div>
               </div>
               
-              <!-- Nút Đánh giá: Chỉ hiện khi đơn đã giao và sản phẩm chưa được đánh giá -->
               <div v-if="order.status === 'DELIVERED'">
                 <button 
                   v-if="!item.isReviewed"
@@ -154,7 +158,6 @@ const submitReview = async () => {
             </div>
           </div>
 
-          <!-- Footer đơn hàng -->
           <div class="pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-end gap-4">
             <div>
               <p class="text-xs text-gray-500 uppercase tracking-widest">Thanh toán</p>
@@ -175,7 +178,6 @@ const submitReview = async () => {
       </div>
     </div>
 
-    <!-- ================= MODAL ĐÁNH GIÁ ================= -->
     <div v-if="showReviewModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm">
       <div class="bg-white w-full max-w-md rounded-[30px] p-8 relative scale-in">
         <button @click="showReviewModal = false" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 transition-colors">
@@ -185,7 +187,6 @@ const submitReview = async () => {
         <h3 class="text-2xl font-black text-gray-900 mb-2">Đánh giá sản phẩm</h3>
         <p class="text-sm text-gray-500 mb-8">{{ selectedItem?.productName }}</p>
 
-        <!-- Chọn Sao -->
         <div class="flex justify-center gap-2 mb-8">
           <button 
             v-for="star in 5" :key="star"
@@ -199,7 +200,6 @@ const submitReview = async () => {
           </button>
         </div>
 
-        <!-- Ô nhập nhận xét -->
         <textarea 
           v-model="reviewForm.comment"
           rows="4"

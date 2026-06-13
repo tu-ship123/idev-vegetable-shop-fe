@@ -5,6 +5,7 @@ import {
   Star, Minus, Plus, ShoppingCart, Heart, Share2, ShieldCheck, Truck, RefreshCcw 
 } from 'lucide-vue-next'
 import { productApi } from '@/api/productApi'
+import axiosInstance from '@/api/apiClient' // ĐÃ BỔ SUNG: Import axios để gọi API Reviews
 import ProductCard from '@/components/ProductCard.vue'
 import { formatPrice } from '@/utils/formatters'
 import { useCartStore } from '@/stores/cart'
@@ -19,8 +20,19 @@ const authStore = useAuthStore()
 const product = ref(null)
 
 const isLoading = ref(true)
+const fetchError = ref('')
 const activeTab = ref('description')
 const quantity = ref(1)
+
+// ================= ĐÃ BỔ SUNG: STATE CHO REVIEWS =================
+const productReviews = ref([])
+const averageRating = ref(5)
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(dateString))
+}
+// =================================================================
 
 const handleAddToCart = () => {
   if (!product.value) return
@@ -33,71 +45,83 @@ const handleAddToCart = () => {
   toastStore.add(`Đã thêm ${quantity.value} ${product.value.name} vào giỏ hàng thành công!`, 'success')
 }
 
-
 const fetchProductDetail = async () => {
   isLoading.value = true
+  fetchError.value = ''
   try {
     const res = await productApi.getProductById(route.params.id)
-    
-    // In thẳng dữ liệu gốc ra Console để "bắt tận tay" Backend trả về cái gì
-    console.log("📦 Dữ liệu gốc từ API trả về:", res)
 
-    // SỬA LỖI: Vét cạn mọi ngóc ngách dữ liệu của Backend
     let p = res;
     if (p?.data && typeof p.data === 'object') p = p.data;
-    if (p?.content && typeof p.content === 'object') p = p.content; // Thêm vụ bọc trong content
+    if (p?.content && typeof p.content === 'object') p = p.content;
     if (p?.result && typeof p.result === 'object') p = p.result;
-    
-    // Đề phòng BE "vui tính" ném về một mảng chứa 1 phần tử
+
     if (Array.isArray(p) && p.length > 0) p = p[0];
 
-    // Tìm ID (đề phòng BE đổi tên biến thành productId)
     const productId = p?.id || p?.productId;
 
     if (!p || !productId) {
       throw new Error("Không tìm thấy thuộc tính 'id' trong dữ liệu trả về.")
     }
 
+    // ================= ĐÃ BỔ SUNG: GỌI API LẤY ĐÁNH GIÁ =================
+    try {
+      const reviewRes = await axiosInstance.get('/reviews')
+      const allReviews = reviewRes.data || reviewRes
+      
+      // Lọc đánh giá chỉ thuộc về sản phẩm này
+      productReviews.value = allReviews.filter(r => r.productId === Number(productId))
+      
+      // Tính điểm trung bình
+      if (productReviews.value.length > 0) {
+        const total = productReviews.value.reduce((sum, r) => sum + r.rating, 0)
+        averageRating.value = (total / productReviews.value.length).toFixed(1)
+      }
+    } catch (e) {
+      console.error('Lỗi tải đánh giá:', e)
+    }
+    // =================================================================
+
     product.value = {
       ...p,
-      id: productId, // Chuẩn hóa lại ID
-      image: p.imageUrl || p.image, 
+      id: productId,
+      image: p.imageUrl || p.image,
       category: p.categoryName || p.category,
-      rating: 5,
-      reviews: 0,
-      shortDesc: p.description, 
+      rating: averageRating.value, // Đã sửa: Lấy điểm thật thay vì fix cứng 5
+      shortDesc: p.description,
       specs: [
         { label: 'Đơn vị', value: p.unit || 'N/A' },
         { label: 'Trạng thái', value: p.stockQty > 0 ? 'Còn hàng' : 'Hết hàng' },
         { label: 'Ngày nhập', value: p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN') : 'Mới' }
       ],
-      related: [] 
+      related: []
     }
 
-    // GIẢI QUYẾT LUÔN PHẦN REVIEW: Fetch danh sách "Sản phẩm tương tự"
     if (p.categoryId) {
       const relatedRes = await productApi.getProducts({ categoryId: p.categoryId, size: 5 })
       let relatedData = relatedRes;
       if (relatedData?.data) relatedData = relatedData.data;
       if (relatedData?.content) relatedData = relatedData.content;
       if (!Array.isArray(relatedData)) relatedData = [];
-      
+
       product.value.related = relatedData
         .filter(item => item.id !== productId)
         .map(item => ({
           ...item,
           image: item.imageUrl || item.image,
           category: item.categoryName || item.category,
-          rating: 5,
-          reviews: 0
+          rating: 5
         }))
-        .slice(0, 4) 
+        .slice(0, 4)
     }
 
   } catch (error) {
-    console.error("❌ Lỗi tải chi tiết sản phẩm:", error)
-    // Tạm thời comment dòng này lại để nó không đá bạn về trang ngoài nữa
-    router.push('/products')
+    console.error('Lỗi tải chi tiết sản phẩm:', error)
+    if (error.response?.status === 404) {
+      router.push('/products')
+    } else {
+      fetchError.value = 'Không thể tải thông tin sản phẩm. Vui lòng thử lại.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -105,7 +129,7 @@ const fetchProductDetail = async () => {
 
 onMounted(() => {
   fetchProductDetail()
-  window.scrollTo(0, 0) // Tự động cuộn lên đầu trang
+  window.scrollTo(0, 0)
 })
 </script>
 
@@ -122,6 +146,28 @@ onMounted(() => {
       </div>
     </div>
 
+    <div v-else-if="fetchError" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 text-center">
+      <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-400">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <h3 class="text-2xl font-black text-gray-900 mb-4">Không thể tải sản phẩm</h3>
+      <p class="text-gray-400 mb-8">{{ fetchError }}</p>
+      <div class="flex gap-4 justify-center">
+        <button
+          @click="fetchProductDetail()"
+          class="bg-gray-900 text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-colors"
+        >
+          Thử lại
+        </button>
+        <button
+          @click="router.push('/products')"
+          class="border border-gray-200 text-gray-500 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-gray-50 transition-colors"
+        >
+          Quay lại sản phẩm
+        </button>
+      </div>
+    </div>
+
     <div v-else-if="product" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Breadcrumb -->
       <nav class="flex mb-12 text-[10px] font-black uppercase tracking-[3px] text-gray-400">
@@ -132,7 +178,7 @@ onMounted(() => {
         <span class="text-gray-900">{{ product.name }}</span>
       </nav>
 
-      <!-- Main Content (VSI-47) -->
+      <!-- Main Content -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-32">
         <!-- Image Gallery -->
         <div class="relative">
@@ -151,8 +197,9 @@ onMounted(() => {
               {{ product.category }}
             </span>
             <div class="flex items-center gap-1 text-yellow-400">
-              <Star v-for="i in 5" :key="i" :size="16" :fill="i <= Math.floor(product.rating) ? 'currentColor' : 'none'" />
-              <span class="text-xs font-black text-gray-400 ml-2">({{ product.reviews }} Đánh giá)</span>
+              <!-- Đã sửa: Hiển thị sao thật dựa trên averageRating -->
+              <Star v-for="i in 5" :key="i" :size="16" :fill="i <= Math.round(product.rating) ? 'currentColor' : 'none'" />
+              <span class="text-xs font-black text-gray-400 ml-2">({{ productReviews.length }} Đánh giá)</span>
             </div>
           </div>
 
@@ -241,11 +288,11 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Detail Tabs (VSI-48) -->
+      <!-- Detail Tabs -->
       <div class="mb-32">
         <div class="flex justify-center gap-12 mb-16 border-b border-gray-100">
           <button 
-            v-for="tab in [{id: 'description', name: 'Mô tả chi tiết'}, {id: 'specs', name: 'Thông số sản phẩm'}, {id: 'reviews', name: `Đánh giá (${product.reviews})`}]"
+            v-for="tab in [{id: 'description', name: 'Mô tả chi tiết'}, {id: 'specs', name: 'Thông số sản phẩm'}, {id: 'reviews', name: `Đánh giá (${productReviews.length})`}]"
             :key="tab.id"
             @click="activeTab = tab.id"
             class="pb-8 text-[11px] font-black uppercase tracking-[3px] transition-all relative"
@@ -276,12 +323,45 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-if="activeTab === 'reviews'" class="text-center py-20 animate-fade-in">
-            <div class="text-6xl font-black text-gray-900 mb-4">{{ product.rating }}</div>
-            <div class="flex justify-center gap-1 text-yellow-400 mb-8">
-              <Star v-for="i in 5" :key="i" :size="24" :fill="i <= 4 ? 'currentColor' : 'none'" />
+          <!-- ĐÃ BỔ SUNG: VẼ GIAO DIỆN HIỂN THỊ DANH SÁCH ĐÁNH GIÁ -->
+          <div v-if="activeTab === 'reviews'" class="animate-fade-in">
+            
+            <div class="text-center mb-16">
+              <div class="text-6xl font-black text-gray-900 mb-4">{{ product.rating }}</div>
+              <div class="flex justify-center gap-1 text-yellow-400 mb-4">
+                <Star v-for="i in 5" :key="i" :size="28" :fill="i <= Math.round(product.rating) ? 'currentColor' : 'none'" />
+              </div>
+              <p class="text-gray-400 text-sm font-medium">Dựa trên {{ productReviews.length }} đánh giá từ khách hàng</p>
             </div>
-            <p class="text-gray-400 text-sm">Hiện chưa có đánh giá chi tiết cho sản phẩm này.</p>
+
+            <div v-if="productReviews.length === 0" class="text-center py-10 bg-gray-50 rounded-3xl border border-gray-100">
+              <p class="text-gray-400 font-medium">Hiện chưa có đánh giá chi tiết cho sản phẩm này.</p>
+            </div>
+            
+            <div v-else class="space-y-6">
+              <div 
+                v-for="review in productReviews" 
+                :key="review.id" 
+                class="bg-white p-8 rounded-[30px] border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-6 transition-hover hover:shadow-md"
+              >
+                <div class="w-14 h-14 bg-green-50 text-green-600 rounded-full flex items-center justify-center font-black text-xl shrink-0 border border-green-100">
+                  {{ review.userFullName ? review.userFullName.charAt(0).toUpperCase() : 'U' }}
+                </div>
+                <div class="flex-1">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                      <h4 class="font-black text-gray-900">{{ review.userFullName || 'Khách hàng ẩn danh' }}</h4>
+                      <p class="text-xs text-gray-400 font-medium mt-1">{{ formatDate(review.createdAt) }}</p>
+                    </div>
+                    <div class="flex text-yellow-400">
+                       <Star v-for="i in 5" :key="i" :size="16" :fill="i <= review.rating ? 'currentColor' : 'none'" />
+                    </div>
+                  </div>
+                  <p class="text-gray-600 text-sm leading-relaxed">{{ review.comment }}</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
